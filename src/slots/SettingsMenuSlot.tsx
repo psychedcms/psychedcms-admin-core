@@ -1,11 +1,13 @@
 import { useLocation, Link } from 'react-router-dom';
 import { ListItemButton, ListItemIcon, ListItemText } from '@mui/material';
+import { useTranslate } from 'react-admin';
 
 import { getSettingsPages } from '../registry.ts';
 
 export function SettingsMenuSlot() {
   const location = useLocation();
   const pages = getSettingsPages();
+  const translate = useTranslate();
 
   return (
     <>
@@ -33,7 +35,7 @@ export function SettingsMenuSlot() {
               </ListItemIcon>
             )}
             <ListItemText
-              primary={page.menuLabel}
+              primary={translate(`psyched.settings.${page.path}`, { _: page.menuLabel })}
               primaryTypographyProps={{ fontSize: '0.8125rem' }}
             />
           </ListItemButton>

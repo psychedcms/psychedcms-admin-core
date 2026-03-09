@@ -26,7 +26,7 @@ export {
 } from './registry.ts';
 
 export { SidebarSlot } from './slots/SidebarSlot.tsx';
-export { SettingsRoutes } from './slots/SettingsRoutes.tsx';
+export { renderSettingsRoutes } from './slots/SettingsRoutes.tsx';
 export { SettingsMenuSlot } from './slots/SettingsMenuSlot.tsx';
 export { AppBarSlot } from './slots/AppBarSlot.tsx';
 export { FormHookSlot } from './slots/FormHookSlot.tsx';

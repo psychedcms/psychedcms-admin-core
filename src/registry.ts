@@ -72,12 +72,27 @@ export function getSaveHooks(resource?: string): SaveHook[] {
   );
 }
 
-export function getI18nMessages(): Record<string, Record<string, string>> {
-  const merged: Record<string, Record<string, string>> = {};
+function deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> {
+  const result = { ...target };
+  for (const key of Object.keys(source)) {
+    if (
+      source[key] && typeof source[key] === 'object' && !Array.isArray(source[key]) &&
+      result[key] && typeof result[key] === 'object' && !Array.isArray(result[key])
+    ) {
+      result[key] = deepMerge(result[key] as Record<string, unknown>, source[key] as Record<string, unknown>);
+    } else {
+      result[key] = source[key];
+    }
+  }
+  return result;
+}
+
+export function getI18nMessages(): Record<string, Record<string, unknown>> {
+  const merged: Record<string, Record<string, unknown>> = {};
   for (const plugin of registry) {
     if (!plugin.i18nMessages) continue;
     for (const [locale, messages] of Object.entries(plugin.i18nMessages)) {
-      merged[locale] = { ...merged[locale], ...messages };
+      merged[locale] = deepMerge((merged[locale] ?? {}) as Record<string, unknown>, messages as Record<string, unknown>);
     }
   }
   return merged;

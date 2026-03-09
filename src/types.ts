@@ -57,5 +57,5 @@ export interface PluginRegistration {
   appWrappers?: AppWrapper[];
   httpMiddleware?: HttpMiddleware[];
   saveHooks?: SaveHook[];
-  i18nMessages?: Record<string, Record<string, string>>;
+  i18nMessages?: Record<string, Record<string, unknown>>;
 }
