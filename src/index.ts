@@ -39,4 +39,8 @@ export { mergePluginI18n } from './slots/mergePluginI18n.ts';
 
 export { useLocaleSettings } from './hooks/useLocaleSettings.ts';
 export type { LocaleSettings } from './hooks/useLocaleSettings.ts';
+export { usePsychedSchema } from './hooks/usePsychedSchema.ts';
+export { PsychedSchemaContext, usePsychedSchemaContext } from './providers/PsychedSchemaContext.ts';
+export type { PsychedSchemaContextValue } from './providers/PsychedSchemaContext.ts';
+export type { ContentTypeMetadata, FieldType, FieldMetadata, ResourceSchema, PsychedSchema, OpenApiProperty, OpenApiSchema, OpenApiComponents, OpenApiDocument, WorkflowState, TransitionMeta } from './types/psychedcms.ts';
 export { GlobalSettings, PreferencesSettings } from './settings/index.ts';
