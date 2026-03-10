@@ -1,3 +1,5 @@
+import './defaults.ts';
+
 export type {
   PluginRegistration,
   SidebarWidget,
@@ -34,3 +36,7 @@ export { AppWrapperSlot } from './slots/AppWrapperSlot.tsx';
 export { buildHttpClient } from './slots/usePluginHttpClient.ts';
 export { runBeforeSaveHooks, runAfterSaveHooks } from './slots/usePluginSaveHooks.ts';
 export { mergePluginI18n } from './slots/mergePluginI18n.ts';
+
+export { useLocaleSettings } from './hooks/useLocaleSettings.ts';
+export type { LocaleSettings } from './hooks/useLocaleSettings.ts';
+export { GlobalSettings, PreferencesSettings } from './settings/index.ts';
