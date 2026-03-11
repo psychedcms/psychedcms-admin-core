@@ -3,13 +3,15 @@ import './defaults.ts';
 export type {
   PluginRegistration,
   SidebarWidget,
+  AdminPage,
   SettingsPage,
-  MenuSection,
   AppBarItem,
   FormHook,
   AppWrapper,
   HttpMiddleware,
   SaveHook,
+  InputResolver,
+  InputResolverProps,
 } from './types.ts';
 
 export {
@@ -17,17 +19,19 @@ export {
   getRegistry,
   freezeRegistry,
   getSidebarWidgets,
+  getAdminPages,
   getSettingsPages,
-  getMenuSections,
   getAppBarItems,
   getFormHooks,
   getAppWrappers,
   getHttpMiddleware,
   getSaveHooks,
+  getInputResolvers,
   getI18nMessages,
 } from './registry.ts';
 
 export { SidebarSlot } from './slots/SidebarSlot.tsx';
+export { renderAdminRoutes } from './slots/AdminRoutes.tsx';
 export { renderSettingsRoutes } from './slots/SettingsRoutes.tsx';
 export { SettingsMenuSlot } from './slots/SettingsMenuSlot.tsx';
 export { AppBarSlot } from './slots/AppBarSlot.tsx';
@@ -39,6 +43,8 @@ export { mergePluginI18n } from './slots/mergePluginI18n.ts';
 
 export { useLocaleSettings } from './hooks/useLocaleSettings.ts';
 export type { LocaleSettings } from './hooks/useLocaleSettings.ts';
+export { useSettings } from './hooks/useSettings.ts';
+export type { Settings } from './hooks/useSettings.ts';
 export { usePsychedSchema } from './hooks/usePsychedSchema.ts';
 export { useFieldMetadata } from './hooks/useFieldMetadata.ts';
 export { useWorkflowState, getTransitionMeta, transitionToEndpoint } from './hooks/useWorkflowState.ts';
@@ -64,7 +70,6 @@ export { FieldGroup } from './components/FieldGroup.tsx';
 export { WorkflowButton } from './components/WorkflowButton.tsx';
 export { ScheduleDialog } from './components/ScheduleDialog.tsx';
 export { buildFormInputs } from './components/ContentFormFields.tsx';
-export { MediaImageInput } from './components/MediaImageInput.tsx';
-export { MediaBrowser } from './components/MediaBrowser.tsx';
 export { PsychedLayout } from './components/PsychedLayout.tsx';
+export type { PsychedLayoutProps } from './components/PsychedLayout.tsx';
 export { PsychedApp } from './components/PsychedApp.tsx';

@@ -1,13 +1,14 @@
 import type {
   PluginRegistration,
   SidebarWidget,
+  AdminPage,
   SettingsPage,
-  MenuSection,
   AppBarItem,
   FormHook,
   AppWrapper,
   HttpMiddleware,
   SaveHook,
+  InputResolver,
 } from './types.ts';
 
 const registry: PluginRegistration[] = [];
@@ -40,8 +41,8 @@ export function getSettingsPages(): SettingsPage[] {
   return registry.flatMap((p) => p.settingsPages ?? []);
 }
 
-export function getMenuSections(): MenuSection[] {
-  return registry.flatMap((p) => p.menuSections ?? []);
+export function getAdminPages(): AdminPage[] {
+  return registry.flatMap((p) => p.adminPages ?? []);
 }
 
 export function getAppBarItems(): AppBarItem[] {
@@ -64,6 +65,10 @@ export function getAppWrappers(): AppWrapper[] {
 
 export function getHttpMiddleware(): HttpMiddleware[] {
   return registry.flatMap((p) => p.httpMiddleware ?? []);
+}
+
+export function getInputResolvers(): InputResolver[] {
+  return registry.flatMap((p) => p.inputResolvers ?? []);
 }
 
 export function getSaveHooks(resource?: string): SaveHook[] {

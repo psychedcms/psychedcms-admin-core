@@ -11,7 +11,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { parseISO, isValid } from 'date-fns';
 import { GeolocationInput } from '@psychedcms/admin-geolocation';
 import type { FieldMetadata } from '../types/psychedcms.ts';
-import { MediaImageInput } from './MediaImageInput.tsx';
+import { getInputResolvers } from '../registry.ts';
 
 /**
  * React Admin-compatible DatePicker using MUI X.
@@ -63,6 +63,18 @@ export function buildFormInputs(fields: Map<string, FieldMetadata>) {
 
         const label = meta.label || name;
         const required = meta.required ?? false;
+
+        // Check plugin input resolvers first
+        let resolved = false;
+        for (const resolver of getInputResolvers()) {
+            if (resolver.types.includes(meta.type)) {
+                const element = resolver.resolve({ source: name, label, required, helperText: meta.info, meta });
+                inputs.push(React.cloneElement(element, { key: name }));
+                resolved = true;
+                break;
+            }
+        }
+        if (resolved) continue;
 
         switch (meta.type) {
             case 'text':
@@ -171,28 +183,6 @@ export function buildFormInputs(fields: Map<string, FieldMetadata>) {
                         defaultZoom={meta.defaultZoom}
                         defaultLat={meta.defaultLat}
                         defaultLng={meta.defaultLng}
-                    />,
-                );
-                break;
-            case 'image':
-                inputs.push(
-                    <MediaImageInput
-                        key={name}
-                        source={name}
-                        label={label}
-                        required={required}
-                        helperText={meta.info}
-                    />,
-                );
-                break;
-            case 'file':
-                // TODO: wire to PsychedCMS media upload for non-image files
-                inputs.push(
-                    <TextInput
-                        key={name}
-                        source={name}
-                        label={`${label} (file upload not yet available)`}
-                        disabled
                     />,
                 );
                 break;

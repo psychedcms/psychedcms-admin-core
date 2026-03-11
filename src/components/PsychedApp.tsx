@@ -15,11 +15,13 @@ import { useOpenApiSchema } from '../providers/SchemaProvider.tsx';
 import { PsychedSchemaContext } from '../providers/PsychedSchemaContext.ts';
 import { createHydraDataProvider } from '../providers/HydraDataProvider.ts';
 import { AppWrapperSlot } from '../slots/AppWrapperSlot.tsx';
+import { renderAdminRoutes } from '../slots/AdminRoutes.tsx';
 import { renderSettingsRoutes } from '../slots/SettingsRoutes.tsx';
 import { ContentList } from './ContentList.tsx';
 import { ContentEdit } from './ContentEdit.tsx';
 import { ContentCreate } from './ContentCreate.tsx';
 import { PsychedLayout } from './PsychedLayout.tsx';
+import { useSettings } from '../hooks/useSettings.ts';
 
 interface PsychedAppProps {
     apiUrl: string;
@@ -27,6 +29,8 @@ interface PsychedAppProps {
     i18nProvider?: I18nProvider;
     dataProvider?: DataProvider;
     layout?: ComponentType<any>;
+    appName?: string;
+    appBaseline?: string;
 }
 
 /**
@@ -40,6 +44,8 @@ export function PsychedApp({
     i18nProvider,
     dataProvider,
     layout: LayoutComponent = PsychedLayout,
+    appName,
+    appBaseline,
 }: PsychedAppProps) {
     const { schema, loading, error } = useOpenApiSchema(apiUrl);
 
@@ -52,6 +58,17 @@ export function PsychedApp({
         () => dataProvider ?? createHydraDataProvider(apiUrl),
         [dataProvider, apiUrl],
     );
+
+    const { app_name: apiAppName, app_baseline: apiAppBaseline } = useSettings();
+
+    // API values take precedence over props (props serve as fallback)
+    const resolvedAppName = apiAppName || appName;
+    const resolvedAppBaseline = apiAppBaseline || appBaseline;
+
+    const resolvedLayout = useMemo(() => {
+        if (!resolvedAppName && !resolvedAppBaseline) return LayoutComponent;
+        return (props: any) => <LayoutComponent {...props} appName={resolvedAppName} appBaseline={resolvedAppBaseline} />;
+    }, [LayoutComponent, resolvedAppName, resolvedAppBaseline]);
 
     if (loading) {
         return (
@@ -71,6 +88,7 @@ export function PsychedApp({
         );
     }
 
+    const adminRoutes = renderAdminRoutes();
     const settingsRoutes = renderSettingsRoutes();
 
     return (
@@ -81,7 +99,7 @@ export function PsychedApp({
                         dataProvider={resolvedDataProvider}
                         authProvider={authProvider}
                         i18nProvider={i18nProvider}
-                        layout={LayoutComponent}
+                        layout={resolvedLayout}
                     >
                         {schema && Array.from(schema.resources.entries()).map(([slug, res]) => {
                             if (!res.contentType) return null;
@@ -97,6 +115,7 @@ export function PsychedApp({
                             );
                         })}
                         <CustomRoutes>
+                            {adminRoutes}
                             {settingsRoutes}
                         </CustomRoutes>
                     </Admin>

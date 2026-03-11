@@ -1,4 +1,18 @@
-import type { ComponentType, ReactNode } from 'react';
+import type { ComponentType, ReactElement, ReactNode } from 'react';
+import type { FieldType, FieldMetadata } from './types/psychedcms.ts';
+
+export interface InputResolverProps {
+  source: string;
+  label?: string;
+  required?: boolean;
+  helperText?: string;
+  meta: FieldMetadata;
+}
+
+export interface InputResolver {
+  types: FieldType[];
+  resolve: (props: InputResolverProps) => ReactElement;
+}
 
 export interface SidebarWidget {
   component: ComponentType<{ resource?: string }>;
@@ -6,21 +20,18 @@ export interface SidebarWidget {
   position?: number;
 }
 
+export interface AdminPage {
+  path: string;
+  component: ComponentType;
+  menuLabel: string;
+  menuIcon?: ComponentType;
+}
+
 export interface SettingsPage {
   path: string;
   component: ComponentType;
   menuLabel: string;
   menuIcon?: ComponentType;
-  menuSection?: string;
-}
-
-export interface MenuSection {
-  label: string;
-  items: Array<{
-    to: string;
-    label: string;
-    icon?: ComponentType;
-  }>;
 }
 
 export interface AppBarItem {
@@ -50,12 +61,13 @@ export interface SaveHook {
 
 export interface PluginRegistration {
   sidebarWidgets?: SidebarWidget[];
+  adminPages?: AdminPage[];
   settingsPages?: SettingsPage[];
-  menuSections?: MenuSection[];
   appBarItems?: AppBarItem[];
   formHooks?: FormHook[];
   appWrappers?: AppWrapper[];
   httpMiddleware?: HttpMiddleware[];
   saveHooks?: SaveHook[];
+  inputResolvers?: InputResolver[];
   i18nMessages?: Record<string, Record<string, unknown>>;
 }

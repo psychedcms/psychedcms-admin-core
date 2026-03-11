@@ -14,7 +14,7 @@ import { renderTimeViewClock } from '@mui/x-date-pickers/timeViewRenderers';
 import { parseISO, isValid } from 'date-fns';
 import { GeolocationInput } from '@psychedcms/admin-geolocation';
 import { useFieldMetadata } from '../hooks/useFieldMetadata.ts';
-import { MediaImageInput } from './MediaImageInput.tsx';
+import { getInputResolvers } from '../registry.ts';
 import type { FieldMetadata } from '../types/psychedcms.ts';
 
 function DatePickerInput({ source, label, required, helperText }: {
@@ -105,6 +105,13 @@ export function InputGuesser({ source, resource: resourceProp }: InputGuesserPro
         : undefined;
     const required = meta.required ?? false;
 
+    // Check plugin input resolvers first
+    for (const resolver of getInputResolvers()) {
+        if (resolver.types.includes(meta.type)) {
+            return resolver.resolve({ source, label, required, helperText: meta.info, meta });
+        }
+    }
+
     switch (meta.type) {
         case 'text':
         case 'email':
@@ -141,8 +148,6 @@ export function InputGuesser({ source, resource: resourceProp }: InputGuesserPro
                     defaultLng={meta.defaultLng}
                 />
             );
-        case 'image':
-            return <MediaImageInput source={source} label={label} required={required} helperText={meta.info} />;
         default:
             return <TextInput source={source} label={label} required={required} helperText={meta.info} />;
     }

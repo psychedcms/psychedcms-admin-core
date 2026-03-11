@@ -1,106 +1,150 @@
-import { Layout, AppBar, Menu } from 'react-admin';
-import { Box, List, ListItem, ListItemText, ListItemButton, ListItemIcon, Collapse, Divider } from '@mui/material';
+import { Layout, AppBar, Menu, MenuItemLink, useSidebarState } from 'react-admin';
+import { Box, List, ListItem, ListItemText, ListItemIcon, Collapse, Divider, Typography } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
-import { useState } from 'react';
-import { useLocation, Link } from 'react-router-dom';
+import { useState, createElement, createContext, useContext } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useTranslate } from 'react-admin';
 import { AppBarSlot } from '../slots/AppBarSlot.tsx';
-import { getSettingsPages } from '../registry.ts';
+import { getAdminPages, getSettingsPages } from '../registry.ts';
 
-const PsychedAppBar = () => (
-    <AppBar>
-        <Box flex={1} />
-        <AppBarSlot />
-    </AppBar>
-);
+interface LayoutConfig {
+    appName?: string;
+    appBaseline?: string;
+}
 
-/**
- * Renders settings menu items, deduplicating by path.
- * Multiple plugins may register the same settings paths
- * (e.g. global, preferences) -- the last registration wins.
- */
-function DeduplicatedSettingsMenu() {
+const LayoutConfigContext = createContext<LayoutConfig>({});
+
+const PsychedAppBar = () => {
+    const { appName, appBaseline } = useContext(LayoutConfigContext);
+    return (
+        <AppBar>
+            {appName && (
+                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.75, mr: 1 }}>
+                    <Typography variant="subtitle1" fontWeight={700} noWrap>
+                        {appName}
+                    </Typography>
+                    {appBaseline && (
+                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 400 }}>
+                            {appBaseline}
+                        </Typography>
+                    )}
+                </Box>
+            )}
+            <Box flex={1} />
+            <AppBarSlot />
+        </AppBar>
+    );
+};
+
+const sectionHeaderStyle = {
+    fontSize: '0.75rem',
+    fontWeight: 600,
+    textTransform: 'uppercase',
+    color: 'text.secondary',
+    letterSpacing: '0.08em',
+};
+
+function SectionHeader({ label }: { label: string }) {
+    const [open] = useSidebarState();
+    const translate = useTranslate();
+    if (!open) return null;
+    return (
+        <List dense disablePadding>
+            <ListItem component="div" sx={{ py: 0.5, px: 2 }}>
+                <ListItemText
+                    primary={translate(`psyched.menu.${label.toLowerCase()}`, { _: label })}
+                    primaryTypographyProps={sectionHeaderStyle}
+                />
+            </ListItem>
+        </List>
+    );
+}
+
+function SettingsSubmenu() {
+    const [settingsOpen, setSettingsOpen] = useState(false);
+    const [sidebarOpen] = useSidebarState();
     const location = useLocation();
     const translate = useTranslate();
     const allPages = getSettingsPages();
+    const isOnSettings = location.pathname.startsWith('/settings');
 
     // Deduplicate by path -- last registered wins (e.g. translatable overrides core)
     const pageMap = new Map<string, typeof allPages[0]>();
     for (const page of allPages) {
         pageMap.set(page.path, page);
     }
+    const pages = Array.from(pageMap.values());
+
+    if (pages.length === 0) return null;
 
     return (
         <>
-            {Array.from(pageMap.values()).map((page) => {
-                const path = `/settings/${page.path}`;
-                const active = location.pathname === path;
-                const Icon = page.menuIcon;
-
-                return (
-                    <ListItemButton
-                        key={page.path}
-                        component={Link}
-                        to={path}
-                        sx={{
-                            pl: 4,
-                            minHeight: 36,
-                            color: active ? 'primary.main' : 'text.primary',
-                            bgcolor: active ? 'action.selected' : 'transparent',
-                            '&:hover': { bgcolor: 'action.hover' },
-                        }}
-                    >
-                        {Icon && (
-                            <ListItemIcon sx={{ minWidth: 32, color: 'inherit' }}>
-                                <Icon />
-                            </ListItemIcon>
-                        )}
+            <ListItem
+                component="div"
+                onClick={() => setSettingsOpen(!settingsOpen)}
+                sx={{ cursor: 'pointer', minHeight: 36, px: 2 }}
+            >
+                <ListItemIcon sx={{ minWidth: sidebarOpen ? 32 : 'auto', color: 'text.secondary' }}>
+                    <SettingsIcon sx={{ fontSize: 20 }} />
+                </ListItemIcon>
+                {sidebarOpen && (
+                    <>
                         <ListItemText
-                            primary={translate(`psyched.settings.${page.path}`, { _: page.menuLabel })}
-                            primaryTypographyProps={{ fontSize: '0.8125rem' }}
+                            primary={translate('psyched.menu.settings', { _: 'Settings' })}
+                            primaryTypographyProps={{
+                                fontSize: '0.8125rem',
+                                fontWeight: isOnSettings ? 600 : 400,
+                            }}
                         />
-                    </ListItemButton>
-                );
-            })}
+                        {settingsOpen || isOnSettings ? <ExpandLess /> : <ExpandMore />}
+                    </>
+                )}
+            </ListItem>
+            {sidebarOpen && (
+                <Collapse in={settingsOpen || isOnSettings} timeout="auto" unmountOnExit>
+                    {pages.map((page) => (
+                        <MenuItemLink
+                            key={page.path}
+                            to={`/settings/${page.path}`}
+                            primaryText={translate(`psyched.settings.${page.path}`, { _: page.menuLabel })}
+                            leftIcon={page.menuIcon ? createElement(page.menuIcon) : undefined}
+                            sx={{ pl: 4 }}
+                        />
+                    ))}
+                </Collapse>
+            )}
         </>
     );
 }
 
 function PsychedMenu() {
-    const [settingsOpen, setSettingsOpen] = useState(false);
-    const location = useLocation();
+    const adminPages = getAdminPages();
     const settingsPages = getSettingsPages();
-    const hasSettings = settingsPages.length > 0;
-    const isOnSettings = location.pathname.startsWith('/settings');
+    const hasAdmin = adminPages.length > 0 || settingsPages.length > 0;
 
     return (
         <>
-            {/* Default React Admin menu renders all registered resources */}
+            {/* Content section: resources */}
+            <SectionHeader label="Content" />
             <Menu />
-            {hasSettings && (
+
+            {/* Admin section: admin pages + settings */}
+            {hasAdmin && (
                 <>
                     <Divider />
-                    <List dense>
-                        <ListItem
-                            component="div"
-                            onClick={() => setSettingsOpen(!settingsOpen)}
-                            sx={{ cursor: 'pointer' }}
-                        >
-                            <SettingsIcon sx={{ mr: 1, fontSize: 20, color: 'text.secondary' }} />
-                            <ListItemText
-                                primary="Settings"
-                                primaryTypographyProps={{
-                                    fontSize: '0.875rem',
-                                    fontWeight: isOnSettings ? 600 : 400,
-                                }}
+                    <SectionHeader label="Admin" />
+                    <List dense disablePadding>
+                        {adminPages.map((page) => (
+                            <MenuItemLink
+                                key={page.path}
+                                to={`/admin/${page.path}`}
+                                primaryText={`psyched.menu.${page.menuLabel.toLowerCase()}`}
+                                leftIcon={page.menuIcon ? createElement(page.menuIcon) : undefined}
                             />
-                            {settingsOpen ? <ExpandLess /> : <ExpandMore />}
-                        </ListItem>
-                        <Collapse in={settingsOpen || isOnSettings} timeout="auto" unmountOnExit>
-                            <DeduplicatedSettingsMenu />
-                        </Collapse>
+                        ))}
+                        <SettingsSubmenu />
                     </List>
                 </>
             )}
@@ -108,6 +152,23 @@ function PsychedMenu() {
     );
 }
 
-export const PsychedLayout = (props: any) => (
-    <Layout {...props} appBar={PsychedAppBar} menu={PsychedMenu} />
+export interface PsychedLayoutProps {
+    appName?: string;
+    appBaseline?: string;
+    [key: string]: unknown;
+}
+
+export const PsychedLayout = ({ appName, appBaseline, ...props }: PsychedLayoutProps) => (
+    <LayoutConfigContext.Provider value={{ appName, appBaseline }}>
+        <Layout
+            {...props}
+            appBar={PsychedAppBar}
+            menu={PsychedMenu}
+            sx={{
+                '& .RaSidebar-fixed': {
+                    bgcolor: 'background.paper',
+                },
+            }}
+        />
+    </LayoutConfigContext.Provider>
 );
