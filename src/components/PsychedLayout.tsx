@@ -11,13 +11,12 @@ import { getAdminPages, getSettingsPages } from '../registry.ts';
 
 interface LayoutConfig {
     appName?: string;
-    appBaseline?: string;
 }
 
 const LayoutConfigContext = createContext<LayoutConfig>({});
 
 const PsychedAppBar = () => {
-    const { appName, appBaseline } = useContext(LayoutConfigContext);
+    const { appName } = useContext(LayoutConfigContext);
     return (
         <AppBar>
             {appName && (
@@ -25,11 +24,9 @@ const PsychedAppBar = () => {
                     <Typography variant="subtitle1" fontWeight={700} noWrap>
                         {appName}
                     </Typography>
-                    {appBaseline && (
-                        <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 400 }}>
-                            {appBaseline}
-                        </Typography>
-                    )}
+                    <Typography variant="caption" sx={{ color: 'text.secondary', fontWeight: 400 }}>
+                        admin
+                    </Typography>
                 </Box>
             )}
             <Box flex={1} />
@@ -154,12 +151,11 @@ function PsychedMenu() {
 
 export interface PsychedLayoutProps {
     appName?: string;
-    appBaseline?: string;
     [key: string]: unknown;
 }
 
-export const PsychedLayout = ({ appName, appBaseline, ...props }: PsychedLayoutProps) => (
-    <LayoutConfigContext.Provider value={{ appName, appBaseline }}>
+export const PsychedLayout = ({ appName, ...props }: PsychedLayoutProps) => (
+    <LayoutConfigContext.Provider value={{ appName }}>
         <Layout
             {...props}
             appBar={PsychedAppBar}

@@ -2,12 +2,11 @@ import { useEffect, useState, useCallback } from 'react';
 
 export interface Settings {
   app_name: string | null;
-  app_baseline: string | null;
 }
 
 const entrypoint = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
-let sharedSettings: Settings = { app_name: null, app_baseline: null };
+let sharedSettings: Settings = { app_name: null };
 let sharedLoading = true;
 let fetchPromise: Promise<void> | null = null;
 const listeners = new Set<() => void>();

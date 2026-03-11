@@ -30,7 +30,6 @@ interface PsychedAppProps {
     dataProvider?: DataProvider;
     layout?: ComponentType<any>;
     appName?: string;
-    appBaseline?: string;
 }
 
 /**
@@ -45,7 +44,6 @@ export function PsychedApp({
     dataProvider,
     layout: LayoutComponent = PsychedLayout,
     appName,
-    appBaseline,
 }: PsychedAppProps) {
     const { schema, loading, error } = useOpenApiSchema(apiUrl);
 
@@ -59,16 +57,15 @@ export function PsychedApp({
         [dataProvider, apiUrl],
     );
 
-    const { app_name: apiAppName, app_baseline: apiAppBaseline } = useSettings();
+    const { app_name: apiAppName } = useSettings();
 
-    // API values take precedence over props (props serve as fallback)
+    // API value takes precedence over prop (prop serves as fallback)
     const resolvedAppName = apiAppName || appName;
-    const resolvedAppBaseline = apiAppBaseline || appBaseline;
 
     const resolvedLayout = useMemo(() => {
-        if (!resolvedAppName && !resolvedAppBaseline) return LayoutComponent;
-        return (props: any) => <LayoutComponent {...props} appName={resolvedAppName} appBaseline={resolvedAppBaseline} />;
-    }, [LayoutComponent, resolvedAppName, resolvedAppBaseline]);
+        if (!resolvedAppName) return LayoutComponent;
+        return (props: any) => <LayoutComponent {...props} appName={resolvedAppName} />;
+    }, [LayoutComponent, resolvedAppName]);
 
     if (loading) {
         return (

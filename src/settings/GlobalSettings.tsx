@@ -34,7 +34,7 @@ async function saveDefaultLocale(defaultLocale: string): Promise<void> {
   }
 }
 
-async function saveSettings(data: { app_name: string; app_baseline: string }): Promise<void> {
+async function saveSettings(data: { app_name: string }): Promise<void> {
   const token = localStorage.getItem('token');
   const response = await fetch(`${entrypoint}/settings`, {
     method: 'PUT',
@@ -56,7 +56,7 @@ async function saveSettings(data: { app_name: string; app_baseline: string }): P
  */
 export function GlobalSettings() {
   const { defaultLocale, supportedLocales, reload: reloadLocale } = useLocaleSettings();
-  const { app_name, app_baseline, reload: reloadSettings } = useSettings();
+  const { app_name, reload: reloadSettings } = useSettings();
   const notify = useNotify();
   const translate = useTranslate();
 
@@ -64,7 +64,6 @@ export function GlobalSettings() {
   const [savingLocale, setSavingLocale] = useState(false);
 
   const [appName, setAppName] = useState(app_name ?? '');
-  const [appBaseline, setAppBaseline] = useState(app_baseline ?? '');
   const [savingSite, setSavingSite] = useState(false);
 
   useEffect(() => {
@@ -75,12 +74,8 @@ export function GlobalSettings() {
     setAppName(app_name ?? '');
   }, [app_name]);
 
-  useEffect(() => {
-    setAppBaseline(app_baseline ?? '');
-  }, [app_baseline]);
-
   const localeChanged = selectedDefault !== defaultLocale;
-  const siteChanged = appName !== (app_name ?? '') || appBaseline !== (app_baseline ?? '');
+  const siteChanged = appName !== (app_name ?? '');
 
   const handleSaveLocale = async () => {
     setSavingLocale(true);
@@ -98,7 +93,7 @@ export function GlobalSettings() {
   const handleSaveSite = async () => {
     setSavingSite(true);
     try {
-      await saveSettings({ app_name: appName, app_baseline: appBaseline });
+      await saveSettings({ app_name: appName });
       reloadSettings();
       notify('psyched.settings.settings_saved', { type: 'success', messageArgs: { _: 'Settings saved' } });
     } catch (err) {
@@ -125,20 +120,12 @@ export function GlobalSettings() {
             </Typography>
           </Box>
 
-          <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
-            <TextField
-              label={translate('psyched.settings.app_name', { _: 'Site Name' })}
-              value={appName}
-              onChange={(e) => setAppName(e.target.value)}
-              sx={{ flex: 1 }}
-            />
-            <TextField
-              label={translate('psyched.settings.app_baseline', { _: 'Baseline' })}
-              value={appBaseline}
-              onChange={(e) => setAppBaseline(e.target.value)}
-              sx={{ flex: 1 }}
-            />
-          </Box>
+          <TextField
+            label={translate('psyched.settings.app_name', { _: 'Site Name' })}
+            value={appName}
+            onChange={(e) => setAppName(e.target.value)}
+            sx={{ maxWidth: 400, mb: 3 }}
+          />
 
           <Box>
             <Button
