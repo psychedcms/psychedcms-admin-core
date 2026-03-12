@@ -9,6 +9,7 @@ import {
     NumberField,
     EditButton,
     useResourceContext,
+    useTranslate,
 } from 'react-admin';
 import { usePsychedSchema } from '../hooks/usePsychedSchema.ts';
 import type { FieldMetadata } from '../types/psychedcms.ts';
@@ -19,6 +20,7 @@ import type { FieldMetadata } from '../types/psychedcms.ts';
  */
 export function ContentList() {
     const resource = useResourceContext();
+    const translate = useTranslate();
     const schema = usePsychedSchema(resource ?? '');
 
     if (!schema || !schema.fields.size) {
@@ -35,14 +37,29 @@ export function ContentList() {
     return (
         <List>
             <Datagrid rowClick="edit">
-                {buildListColumns(schema.fields)}
+                {buildListColumns(schema.fields, resource ?? '', translate)}
                 <EditButton />
             </Datagrid>
         </List>
     );
 }
 
-function buildListColumns(fields: Map<string, FieldMetadata>) {
+function resolveFieldLabel(
+    resource: string,
+    fieldName: string,
+    meta: FieldMetadata,
+    translate: (key: string) => string,
+): string {
+    const translationKey = `resources.${resource}.fields.${fieldName}`;
+    const translated = translate(translationKey);
+    return translated !== translationKey ? translated : (meta.label || fieldName);
+}
+
+function buildListColumns(
+    fields: Map<string, FieldMetadata>,
+    resource: string,
+    translate: (key: string) => string,
+) {
     const columns: React.ReactElement[] = [];
 
     for (const [name, meta] of fields) {
@@ -50,7 +67,7 @@ function buildListColumns(fields: Map<string, FieldMetadata>) {
         if (meta.type === 'image' || meta.type === 'file' || meta.type === 'imagelist' || meta.type === 'filelist') continue;
         if (meta.type === 'collection' || meta.type === 'geolocation') continue;
 
-        const label = meta.label || name;
+        const label = resolveFieldLabel(resource, name, meta, translate);
 
         switch (meta.type) {
             case 'date':

@@ -27,7 +27,7 @@ export function PreferencesSettings() {
 
   const handleSave = () => {
     setRaLocale(selectedLocale);
-    notify('Preferences saved', { type: 'success' });
+    notify('psyched.settings.preferences_saved', { type: 'success', messageArgs: { _: 'Preferences saved' } });
   };
 
   const hasChanges = selectedLocale !== raLocale;

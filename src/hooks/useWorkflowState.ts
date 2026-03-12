@@ -187,14 +187,15 @@ export function useWorkflowState(
           throw new Error(message);
         }
 
-        notify(`${getTransitionMeta(transition).label} applied successfully`, {
+        notify('psyched.workflow.transition_success', {
           type: 'success',
+          messageArgs: { _: 'Transition applied' },
         });
 
         await fetchWorkflowState();
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown error';
-        notify(`Failed to apply transition: ${message}`, { type: 'error' });
+        notify('psyched.workflow.transition_failed', { type: 'error', messageArgs: { message, _: `Failed to apply transition: ${message}` } });
         throw err;
       }
     },
