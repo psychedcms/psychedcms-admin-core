@@ -2,6 +2,7 @@ export const enMessages = {
     psyched: {
         menu: {
             content: 'Content',
+            references: 'References',
             admin: 'Admin',
             settings: 'Settings',
         },

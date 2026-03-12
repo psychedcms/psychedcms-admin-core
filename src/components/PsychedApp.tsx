@@ -97,6 +97,7 @@ export function PsychedApp({
                         authProvider={authProvider}
                         i18nProvider={i18nProvider}
                         layout={resolvedLayout}
+                        requireAuth
                     >
                         {schema && Array.from(schema.resources.entries()).map(([slug, res]) => {
                             if (!res.contentType) return null;

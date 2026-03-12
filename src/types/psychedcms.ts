@@ -19,6 +19,8 @@ export interface ContentTypeMetadata {
   singleton: boolean;
   viewless?: boolean;
   locales: string[];
+  group: string | null;
+  priority: number;
 }
 
 /**
