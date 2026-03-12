@@ -16,25 +16,11 @@ import LanguageIcon from '@mui/icons-material/Language';
 import WebIcon from '@mui/icons-material/Web';
 import SaveIcon from '@mui/icons-material/Save';
 
-import { useLocaleSettings } from '../hooks/useLocaleSettings.ts';
 import { useSettings } from '../hooks/useSettings.ts';
 
 const entrypoint = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
-async function saveDefaultLocale(defaultLocale: string): Promise<void> {
-  const response = await fetch(`${entrypoint}/locale-settings`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ defaultLocale }),
-  });
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Save failed' }));
-    throw new Error(error.error ?? 'Save failed');
-  }
-}
-
-async function saveSettings(data: { app_name: string }): Promise<void> {
+async function saveSettings(data: Record<string, string>): Promise<void> {
   const token = localStorage.getItem('token');
   const response = await fetch(`${entrypoint}/settings`, {
     method: 'PUT',
@@ -55,33 +41,32 @@ async function saveSettings(data: { app_name: string }): Promise<void> {
  * Global Settings page — manage the default locale and site identity.
  */
 export function GlobalSettings() {
-  const { defaultLocale, supportedLocales, reload: reloadLocale } = useLocaleSettings();
-  const { app_name, reload: reloadSettings } = useSettings();
+  const { app_name, default_locale, supported_locales, reload } = useSettings();
   const notify = useNotify();
   const translate = useTranslate();
 
-  const [selectedDefault, setSelectedDefault] = useState(defaultLocale);
+  const [selectedDefault, setSelectedDefault] = useState(default_locale);
   const [savingLocale, setSavingLocale] = useState(false);
 
   const [appName, setAppName] = useState(app_name ?? '');
   const [savingSite, setSavingSite] = useState(false);
 
   useEffect(() => {
-    setSelectedDefault(defaultLocale);
-  }, [defaultLocale]);
+    setSelectedDefault(default_locale);
+  }, [default_locale]);
 
   useEffect(() => {
     setAppName(app_name ?? '');
   }, [app_name]);
 
-  const localeChanged = selectedDefault !== defaultLocale;
+  const localeChanged = selectedDefault !== default_locale;
   const siteChanged = appName !== (app_name ?? '');
 
   const handleSaveLocale = async () => {
     setSavingLocale(true);
     try {
-      await saveDefaultLocale(selectedDefault);
-      reloadLocale();
+      await saveSettings({ default_locale: selectedDefault });
+      reload();
       notify('psyched.settings.locale_saved', { type: 'success', messageArgs: { _: 'Default locale saved' } });
     } catch (err) {
       notify(err instanceof Error ? err.message : 'Failed to save', { type: 'error' });
@@ -94,7 +79,7 @@ export function GlobalSettings() {
     setSavingSite(true);
     try {
       await saveSettings({ app_name: appName });
-      reloadSettings();
+      reload();
       notify('psyched.settings.settings_saved', { type: 'success', messageArgs: { _: 'Settings saved' } });
     } catch (err) {
       notify(err instanceof Error ? err.message : 'Failed to save', { type: 'error' });
@@ -160,7 +145,7 @@ export function GlobalSettings() {
               label={defaultLanguageLabel}
               onChange={(e) => setSelectedDefault(e.target.value)}
             >
-              {supportedLocales.map((loc) => (
+              {supported_locales.map((loc) => (
                 <MenuItem key={loc} value={loc}>
                   {loc.toUpperCase()}
                 </MenuItem>
