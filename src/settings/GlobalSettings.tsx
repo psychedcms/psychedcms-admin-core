@@ -17,6 +17,7 @@ import WebIcon from '@mui/icons-material/Web';
 import SaveIcon from '@mui/icons-material/Save';
 
 import { useSettings } from '../hooks/useSettings.ts';
+import { useLocaleSettings } from '../hooks/useLocaleSettings.ts';
 
 const entrypoint = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
@@ -41,25 +42,26 @@ async function saveSettings(data: Record<string, string>): Promise<void> {
  * Global Settings page — manage the default locale and site identity.
  */
 export function GlobalSettings() {
-  const { app_name, default_locale, supported_locales, reload } = useSettings();
+  const { app_name, reload } = useSettings();
+  const { defaultLocale, supportedLocales } = useLocaleSettings();
   const notify = useNotify();
   const translate = useTranslate();
 
-  const [selectedDefault, setSelectedDefault] = useState(default_locale);
+  const [selectedDefault, setSelectedDefault] = useState(defaultLocale);
   const [savingLocale, setSavingLocale] = useState(false);
 
   const [appName, setAppName] = useState(app_name ?? '');
   const [savingSite, setSavingSite] = useState(false);
 
   useEffect(() => {
-    setSelectedDefault(default_locale);
-  }, [default_locale]);
+    setSelectedDefault(defaultLocale);
+  }, [defaultLocale]);
 
   useEffect(() => {
     setAppName(app_name ?? '');
   }, [app_name]);
 
-  const localeChanged = selectedDefault !== default_locale;
+  const localeChanged = selectedDefault !== defaultLocale;
   const siteChanged = appName !== (app_name ?? '');
 
   const handleSaveLocale = async () => {
@@ -145,7 +147,7 @@ export function GlobalSettings() {
               label={defaultLanguageLabel}
               onChange={(e) => setSelectedDefault(e.target.value)}
             >
-              {supported_locales.map((loc) => (
+              {supportedLocales.map((loc) => (
                 <MenuItem key={loc} value={loc}>
                   {loc.toUpperCase()}
                 </MenuItem>

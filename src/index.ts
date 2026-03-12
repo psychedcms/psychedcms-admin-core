@@ -56,7 +56,7 @@ export { GlobalSettings, PreferencesSettings } from './settings/index.ts';
 // Providers
 export { useOpenApiSchema } from './providers/SchemaProvider.tsx';
 export { createHydraDataProvider } from './providers/HydraDataProvider.ts';
-export { buildI18nProvider } from './providers/i18nProvider.ts';
+export { buildI18nProvider, getAvailableLocales } from './providers/i18nProvider.ts';
 
 // Components
 export { ContentList } from './components/ContentList.tsx';

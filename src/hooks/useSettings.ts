@@ -2,13 +2,12 @@ import { useEffect, useState, useCallback } from 'react';
 
 export interface Settings {
   app_name: string | null;
-  default_locale: string;
-  supported_locales: string[];
+  default_locale: string | null;
 }
 
 const entrypoint = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
 
-let sharedSettings: Settings = { app_name: null, default_locale: 'en', supported_locales: ['en'] };
+let sharedSettings: Settings = { app_name: null, default_locale: null };
 let sharedLoading = true;
 let fetchPromise: Promise<void> | null = null;
 const listeners = new Set<() => void>();
