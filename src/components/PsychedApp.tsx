@@ -59,8 +59,8 @@ export function PsychedApp({
 
     const { app_name: apiAppName } = useSettings();
 
-    // API value takes precedence over prop (prop serves as fallback)
-    const resolvedAppName = apiAppName || appName;
+    // API value takes precedence over prop, then core default
+    const resolvedAppName = apiAppName || appName || 'PsychedCMS';
 
     const resolvedLayout = useMemo(() => {
         if (!resolvedAppName) return LayoutComponent;

@@ -15,10 +15,12 @@ interface LayoutConfig {
 
 const LayoutConfigContext = createContext<LayoutConfig>({});
 
+const PsychedToolbar = () => null;
+
 const PsychedAppBar = () => {
     const { appName } = useContext(LayoutConfigContext);
     return (
-        <AppBar>
+        <AppBar toolbar={<PsychedToolbar />}>
             {appName && (
                 <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.75, mr: 1 }}>
                     <Typography variant="subtitle1" fontWeight={700} noWrap>

@@ -124,6 +124,8 @@ export function GlobalSettings() {
             label={translate('psyched.settings.app_name', { _: 'Site Name' })}
             value={appName}
             onChange={(e) => setAppName(e.target.value)}
+            placeholder="PsychedCMS"
+            helperText={appName ? '' : 'Default: PsychedCMS'}
             sx={{ maxWidth: 400, mb: 3 }}
           />
 
