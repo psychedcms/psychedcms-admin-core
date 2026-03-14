@@ -1,4 +1,4 @@
-import { DataProvider, HttpError } from 'react-admin';
+import { type DataProvider, HttpError } from 'react-admin';
 import { buildHttpClient } from '../slots/usePluginHttpClient.ts';
 
 /**

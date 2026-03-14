@@ -101,6 +101,7 @@ export function PsychedApp({
                     >
                         {schema && Array.from(schema.resources.entries()).map(([slug, res]) => {
                             if (!res.contentType) return null;
+                            if (res.contentType.aggregateRoot) return null;
                             return (
                                 <Resource
                                     key={slug}

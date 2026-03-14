@@ -64,6 +64,8 @@ export interface FieldMetadata {
   postfix?: string;
   separator?: boolean;
   class?: string;
+  listColumn?: boolean;
+  listColumnOrder?: number;
   default?: unknown;
   required?: boolean;
   readonly?: boolean;

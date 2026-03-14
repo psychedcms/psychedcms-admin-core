@@ -140,6 +140,7 @@ function useGroupedResources(): Map<string, ResourceEntry[]> {
         for (const slug of resourceNames) {
             const res = schema?.resources.get(slug);
             if (!res?.contentType) continue;
+            if (res.contentType.aggregateRoot) continue;
 
             const group = res.contentType.group ?? 'content';
             if (!groups.has(group)) {
