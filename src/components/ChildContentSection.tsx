@@ -106,7 +106,14 @@ export function ChildContentSection({ childResource }: ChildContentSectionProps)
             if (['html', 'markdown', 'hidden', 'image', 'file', 'collection', 'geolocation'].includes(meta.type)) return false;
             return true;
         }
-    );
+    ).sort((a, b) => {
+        const orderA = a[1].listColumnOrder;
+        const orderB = b[1].listColumnOrder;
+        if (orderA != null && orderB != null) return orderA - orderB;
+        if (orderA != null) return -1;
+        if (orderB != null) return 1;
+        return 0;
+    });
 
     const handleAdd = () => {
         setEditingRecord(null);
