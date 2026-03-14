@@ -73,3 +73,4 @@ export { buildFormInputs } from './components/ContentFormFields.tsx';
 export { PsychedLayout } from './components/PsychedLayout.tsx';
 export type { PsychedLayoutProps } from './components/PsychedLayout.tsx';
 export { PsychedApp } from './components/PsychedApp.tsx';
+export { ChildContentSection } from './components/ChildContentSection.tsx';

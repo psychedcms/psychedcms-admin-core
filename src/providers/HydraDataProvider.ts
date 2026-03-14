@@ -147,10 +147,37 @@ export const createHydraDataProvider = (apiUrl: string): DataProvider => {
 /** Extract numeric id from Hydra @id IRI or use existing id field */
 function addId(record: any): any {
     if (record.id !== undefined) {
-        return record;
+        return normalizeRelations(record);
     }
     // Extract id from @id IRI like "/api/bands/5"
     const iri: string = record['@id'] || '';
     const match = iri.match(/\/(\d+)$/);
-    return { ...record, id: match ? parseInt(match[1], 10) : iri };
+    return normalizeRelations({ ...record, id: match ? parseInt(match[1], 10) : iri });
+}
+
+/**
+ * Convert embedded Hydra objects to their numeric IDs so that
+ * ReferenceInput/AutocompleteInput can match them against fetched choices.
+ */
+function normalizeRelations(record: any): any {
+    const result = { ...record };
+    for (const [key, value] of Object.entries(result)) {
+        if (key.startsWith('@') || key === 'id') continue;
+        if (Array.isArray(value)) {
+            result[key] = value.map((item) =>
+                item && typeof item === 'object' && '@id' in item
+                    ? extractId(item as any)
+                    : item,
+            );
+        } else if (value && typeof value === 'object' && '@id' in (value as any)) {
+            result[key] = extractId(value as any);
+        }
+    }
+    return result;
+}
+
+function extractId(obj: { '@id': string; id?: number }): number | string {
+    if (obj.id !== undefined) return obj.id;
+    const match = obj['@id'].match(/\/(\d+)$/);
+    return match ? parseInt(match[1], 10) : obj['@id'];
 }

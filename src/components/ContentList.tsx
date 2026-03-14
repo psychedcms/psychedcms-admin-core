@@ -7,13 +7,32 @@ import {
     UrlField,
     BooleanField,
     NumberField,
-    FunctionField,
+    ReferenceField,
+    ReferenceArrayField,
+    useListContext,
     EditButton,
     useResourceContext,
     useTranslate,
 } from 'react-admin';
 import { usePsychedSchema } from '../hooks/usePsychedSchema.ts';
 import type { FieldMetadata } from '../types/psychedcms.ts';
+
+/**
+ * Renders a comma-separated list of related record names,
+ * truncated to `max` items with a "+N others" suffix.
+ * Uses the configurable `displayField` from relation metadata.
+ */
+function RelationList({ displayField, max }: { displayField: string; max: number }) {
+    const { data } = useListContext();
+    if (!data || data.length === 0) return null;
+    const names = data.map((r: Record<string, unknown>) => r[displayField] ?? '').filter(Boolean);
+    const visible = names.slice(0, max);
+    const remaining = names.length - visible.length;
+    const text = remaining > 0
+        ? `${visible.join(', ')} +${remaining} others`
+        : visible.join(', ');
+    return <span>{text}</span>;
+}
 
 /**
  * Schema-driven list view. Reads x-psychedcms field metadata
@@ -106,39 +125,41 @@ function buildListColumns(
             case 'email':
                 columns.push(<UrlField key={name} source={name} label={label} />);
                 break;
-            case 'relation':
-            case 'entity_taxonomy':
-                columns.push(
-                    <FunctionField
-                        key={name}
-                        source={name}
-                        label={label}
-                        render={(record: Record<string, unknown>) => {
-                            const value = record[name];
-                            if (value == null) return '';
-                            const displayField = meta.displayField || 'name';
-                            if (Array.isArray(value)) {
-                                const items = value
-                                    .map((item) =>
-                                        typeof item === 'object' && item !== null
-                                            ? (item as Record<string, unknown>)[displayField] ?? ''
-                                            : String(item),
-                                    )
-                                    .filter(Boolean);
-                                const visible = items.slice(0, 3);
-                                const remaining = items.length - visible.length;
-                                return remaining > 0
-                                    ? `${visible.join(', ')} +${remaining} others`
-                                    : visible.join(', ');
-                            }
-                            if (typeof value === 'object') {
-                                return (value as Record<string, unknown>)[displayField] ?? '';
-                            }
-                            return String(value);
-                        }}
-                    />,
-                );
+            case 'relation': {
+                const reference = meta.reference || name;
+                const displayField = meta.displayField || 'name';
+                if (meta.multiple) {
+                    columns.push(
+                        <ReferenceArrayField key={name} source={name} reference={reference} label={label}>
+                            <RelationList displayField={displayField} max={3} />
+                        </ReferenceArrayField>,
+                    );
+                } else {
+                    columns.push(
+                        <ReferenceField key={name} source={name} reference={reference} label={label} link={false}>
+                            <TextField source={displayField} />
+                        </ReferenceField>,
+                    );
+                }
                 break;
+            }
+            case 'entity_taxonomy': {
+                const taxDisplayField = meta.displayField || 'name';
+                if (meta.multiple) {
+                    columns.push(
+                        <ReferenceArrayField key={name} source={name} reference="taxonomies" label={label}>
+                            <RelationList displayField={taxDisplayField} max={3} />
+                        </ReferenceArrayField>,
+                    );
+                } else {
+                    columns.push(
+                        <ReferenceField key={name} source={name} reference="taxonomies" label={label} link={false}>
+                            <TextField source={taxDisplayField} />
+                        </ReferenceField>,
+                    );
+                }
+                break;
+            }
             default:
                 columns.push(<TextField key={name} source={name} label={label} />);
         }

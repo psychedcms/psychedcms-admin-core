@@ -3,6 +3,9 @@ import {
     NumberInput,
     BooleanInput,
     SelectInput,
+    ReferenceInput,
+    AutocompleteInput,
+    AutocompleteArrayInput,
     useInput,
     useResourceContext,
     useTranslate,
@@ -147,6 +150,52 @@ export function InputGuesser({ source, resource: resourceProp }: InputGuesserPro
                     defaultLat={meta.defaultLat}
                     defaultLng={meta.defaultLng}
                 />
+            );
+        case 'relation':
+            if (meta.multiple) {
+                return (
+                    <ReferenceInput source={source} reference={meta.reference!}>
+                        <AutocompleteArrayInput
+                            label={label}
+                            optionText={meta.displayField || 'name'}
+                            helperText={meta.info}
+                            filterToQuery={(q: string) => ({ title: q })}
+                        />
+                    </ReferenceInput>
+                );
+            }
+            return (
+                <ReferenceInput source={source} reference={meta.reference!}>
+                    <AutocompleteInput
+                        label={label}
+                        optionText={meta.displayField || 'name'}
+                        helperText={meta.info}
+                        filterToQuery={(q: string) => ({ title: q })}
+                    />
+                </ReferenceInput>
+            );
+        case 'entity_taxonomy':
+            if (meta.multiple) {
+                return (
+                    <ReferenceInput source={source} reference="taxonomies">
+                        <AutocompleteArrayInput
+                            label={label}
+                            optionText="name"
+                            helperText={meta.info}
+                            filterToQuery={(q: string) => ({ name: q })}
+                        />
+                    </ReferenceInput>
+                );
+            }
+            return (
+                <ReferenceInput source={source} reference="taxonomies">
+                    <AutocompleteInput
+                        label={label}
+                        optionText="name"
+                        helperText={meta.info}
+                        filterToQuery={(q: string) => ({ name: q })}
+                    />
+                </ReferenceInput>
             );
         default:
             return <TextInput source={source} label={label} required={required} helperText={meta.info} />;

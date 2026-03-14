@@ -11,13 +11,13 @@ const TRANSITION_META: Record<string, TransitionMeta & { priority: number }> = {
   publish: {
     name: 'publish',
     label: 'psyched.workflow.publish',
-    color: 'success',
+    color: 'primary',
     priority: 10,
   },
   approve: {
     name: 'approve',
     label: 'psyched.workflow.approve',
-    color: 'success',
+    color: 'primary',
     priority: 9,
   },
   submit_for_review: {
@@ -47,7 +47,7 @@ const TRANSITION_META: Record<string, TransitionMeta & { priority: number }> = {
   unpublish: {
     name: 'unpublish',
     label: 'psyched.workflow.unpublish',
-    color: 'secondary',
+    color: 'primary',
     priority: 4,
   },
   archive: {

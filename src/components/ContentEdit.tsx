@@ -4,9 +4,11 @@ import {
 } from 'react-admin';
 import { Box } from '@mui/material';
 import { usePsychedSchema } from '../hooks/usePsychedSchema.ts';
+import { usePsychedSchemaContext } from '../providers/PsychedSchemaContext.ts';
 import { runBeforeSaveHooks, runAfterSaveHooks } from '../slots/usePluginSaveHooks.ts';
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { ContentForm } from './ContentForm.tsx';
+import { ChildContentSection } from './ChildContentSection.tsx';
 
 /**
  * Keys stripped from PATCH payloads.
@@ -50,6 +52,14 @@ function normalizeForPatch(data: Record<string, unknown>): Record<string, unknow
 export function ContentEdit() {
     const resource = useResourceContext();
     const schema = usePsychedSchema(resource ?? '');
+    const { schema: fullSchema } = usePsychedSchemaContext();
+
+    const childResources = useMemo(() => {
+        if (!fullSchema || !resource) return [];
+        return Array.from(fullSchema.resources.entries())
+            .filter(([, res]) => res.contentType?.aggregateRoot === resource)
+            .map(([slug]) => slug);
+    }, [fullSchema, resource]);
 
     const transform = useCallback(
         async (data: Record<string, unknown>) => {
@@ -75,6 +85,9 @@ export function ContentEdit() {
             }}
         >
             <ContentForm />
+            {childResources.map((slug) => (
+                <ChildContentSection key={slug} childResource={slug} />
+            ))}
         </Edit>
     );
 }

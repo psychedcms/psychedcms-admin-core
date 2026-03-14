@@ -21,6 +21,7 @@ export interface ContentTypeMetadata {
   locales: string[];
   group: string | null;
   priority: number;
+  aggregateRoot?: string;
 }
 
 /**
