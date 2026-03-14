@@ -1,9 +1,11 @@
+import { useCallback } from 'react';
 import {
     TextInput,
     NumberInput,
     BooleanInput,
     SelectInput,
     ReferenceInput,
+    ReferenceArrayInput,
     AutocompleteInput,
     AutocompleteArrayInput,
     useInput,
@@ -79,6 +81,53 @@ function buildSelectChoices(meta: FieldMetadata) {
     return Object.entries(values).map(([id, name]) => ({ id, name }));
 }
 
+function RelationInput({ source, reference, displayField, multiple, label, helperText }: {
+    source: string;
+    reference: string;
+    displayField: string;
+    multiple?: boolean;
+    label?: string;
+    helperText?: string;
+}) {
+    const filterToQuery = useCallback(
+        (q: string) => (q ? { [displayField]: q } : {}),
+        [displayField],
+    );
+    const matchSuggestion = useCallback(
+        (filter: string, choice: Record<string, unknown>) => {
+            if (!filter) return true;
+            const text = String(choice[displayField] ?? '').toLowerCase();
+            return text.includes(filter.toLowerCase());
+        },
+        [displayField],
+    );
+
+    if (multiple) {
+        return (
+            <ReferenceArrayInput source={source} reference={reference}>
+                <AutocompleteArrayInput
+                    label={label}
+                    optionText={displayField}
+                    helperText={helperText}
+                    filterToQuery={filterToQuery}
+                    matchSuggestion={matchSuggestion}
+                />
+            </ReferenceArrayInput>
+        );
+    }
+    return (
+        <ReferenceInput source={source} reference={reference}>
+            <AutocompleteInput
+                label={label}
+                optionText={displayField}
+                helperText={helperText}
+                filterToQuery={filterToQuery}
+                matchSuggestion={matchSuggestion}
+            />
+        </ReferenceInput>
+    );
+}
+
 interface InputGuesserProps {
     source: string;
     resource?: string;
@@ -152,50 +201,26 @@ export function InputGuesser({ source, resource: resourceProp }: InputGuesserPro
                 />
             );
         case 'relation':
-            if (meta.multiple) {
-                return (
-                    <ReferenceInput source={source} reference={meta.reference!}>
-                        <AutocompleteArrayInput
-                            label={label}
-                            optionText={meta.displayField || 'name'}
-                            helperText={meta.info}
-                            filterToQuery={(q: string) => ({ title: q })}
-                        />
-                    </ReferenceInput>
-                );
-            }
             return (
-                <ReferenceInput source={source} reference={meta.reference!}>
-                    <AutocompleteInput
-                        label={label}
-                        optionText={meta.displayField || 'name'}
-                        helperText={meta.info}
-                        filterToQuery={(q: string) => ({ title: q })}
-                    />
-                </ReferenceInput>
+                <RelationInput
+                    source={source}
+                    reference={meta.reference!}
+                    displayField={meta.displayField || 'name'}
+                    multiple={meta.multiple}
+                    label={label}
+                    helperText={meta.info}
+                />
             );
         case 'entity_taxonomy':
-            if (meta.multiple) {
-                return (
-                    <ReferenceInput source={source} reference="taxonomies">
-                        <AutocompleteArrayInput
-                            label={label}
-                            optionText="name"
-                            helperText={meta.info}
-                            filterToQuery={(q: string) => ({ name: q })}
-                        />
-                    </ReferenceInput>
-                );
-            }
             return (
-                <ReferenceInput source={source} reference="taxonomies">
-                    <AutocompleteInput
-                        label={label}
-                        optionText="name"
-                        helperText={meta.info}
-                        filterToQuery={(q: string) => ({ name: q })}
-                    />
-                </ReferenceInput>
+                <RelationInput
+                    source={source}
+                    reference="taxonomies"
+                    displayField="name"
+                    multiple={meta.multiple}
+                    label={label}
+                    helperText={meta.info}
+                />
             );
         default:
             return <TextInput source={source} label={label} required={required} helperText={meta.info} />;
