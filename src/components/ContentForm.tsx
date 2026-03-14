@@ -127,6 +127,10 @@ export function ContentForm({ resource: resourceProp }: ContentFormProps) {
   );
 }
 
+function isFormVisible(metadata: FieldMetadata): boolean {
+  return metadata.type !== 'hidden' && !metadata.readonly;
+}
+
 function isSidebarField(fieldName: string, metadata: { group?: string }): boolean {
   return HARDCODED_SIDEBAR_FIELDS.has(fieldName) || metadata.group === 'sidebar';
 }
@@ -139,6 +143,7 @@ function groupFieldsByGroup(
 
   for (const [fieldName, metadata] of fields) {
     if (isSidebarField(fieldName, metadata)) continue;
+    if (!isFormVisible(metadata)) continue;
 
     const group = metadata.group ?? 'general';
     if (!groups.has(group)) {
@@ -157,6 +162,7 @@ function getGroupOrder(fields: Map<string, FieldMetadata> | undefined): string[]
 
   for (const [fieldName, metadata] of fields) {
     if (isSidebarField(fieldName, metadata)) continue;
+    if (!isFormVisible(metadata)) continue;
 
     const group = metadata.group ?? 'general';
     if (!seen.has(group)) {

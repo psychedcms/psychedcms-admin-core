@@ -6,6 +6,7 @@ import { Box } from '@mui/material';
 import { usePsychedSchema } from '../hooks/usePsychedSchema.ts';
 import { usePsychedSchemaContext } from '../providers/PsychedSchemaContext.ts';
 import { runBeforeSaveHooks, runAfterSaveHooks } from '../slots/usePluginSaveHooks.ts';
+import { getChildContentOverride } from '../registry.ts';
 import { useCallback, useMemo } from 'react';
 import { ContentForm } from './ContentForm.tsx';
 import { ChildContentSection } from './ChildContentSection.tsx';
@@ -85,9 +86,14 @@ export function ContentEdit() {
             }}
         >
             <ContentForm />
-            {childResources.map((slug) => (
-                <ChildContentSection key={slug} childResource={slug} />
-            ))}
+            {childResources.map((slug) => {
+                const override = getChildContentOverride(resource ?? '', slug);
+                if (override) {
+                    const Override = override.component;
+                    return <Override key={slug} childResource={slug} />;
+                }
+                return <ChildContentSection key={slug} childResource={slug} />;
+            })}
         </Edit>
     );
 }

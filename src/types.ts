@@ -59,6 +59,12 @@ export interface SaveHook {
   resource?: string;
 }
 
+export interface ChildContentOverride {
+  parentResource: string;
+  childResource: string;
+  component: ComponentType<{ childResource: string }>;
+}
+
 export interface PluginRegistration {
   sidebarWidgets?: SidebarWidget[];
   adminPages?: AdminPage[];
@@ -69,5 +75,6 @@ export interface PluginRegistration {
   httpMiddleware?: HttpMiddleware[];
   saveHooks?: SaveHook[];
   inputResolvers?: InputResolver[];
+  childContentOverrides?: ChildContentOverride[];
   i18nMessages?: Record<string, Record<string, unknown>>;
 }

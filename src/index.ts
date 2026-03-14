@@ -12,6 +12,7 @@ export type {
   SaveHook,
   InputResolver,
   InputResolverProps,
+  ChildContentOverride,
 } from './types.ts';
 
 export {
@@ -28,6 +29,7 @@ export {
   getSaveHooks,
   getInputResolvers,
   getI18nMessages,
+  getChildContentOverride,
 } from './registry.ts';
 
 export { SidebarSlot } from './slots/SidebarSlot.tsx';

@@ -9,6 +9,7 @@ import type {
   HttpMiddleware,
   SaveHook,
   InputResolver,
+  ChildContentOverride,
 } from './types.ts';
 
 const registry: PluginRegistration[] = [];
@@ -75,6 +76,11 @@ export function getSaveHooks(resource?: string): SaveHook[] {
   return registry.flatMap((p) => p.saveHooks ?? []).filter(
     (h) => !h.resource || h.resource === resource,
   );
+}
+
+export function getChildContentOverride(parentResource: string, childResource: string): ChildContentOverride | undefined {
+  const overrides = registry.flatMap((p) => p.childContentOverrides ?? []);
+  return overrides.find((o) => o.parentResource === parentResource && o.childResource === childResource);
 }
 
 function deepMerge(target: Record<string, unknown>, source: Record<string, unknown>): Record<string, unknown> {
