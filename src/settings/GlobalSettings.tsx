@@ -1,0 +1,187 @@
+import { useState, useEffect } from 'react';
+import { useNotify, useTranslate } from 'react-admin';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  Button,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  TextField,
+} from '@mui/material';
+import LanguageIcon from '@mui/icons-material/Language';
+import WebIcon from '@mui/icons-material/Web';
+import SaveIcon from '@mui/icons-material/Save';
+
+import { useSettings } from '../hooks/useSettings.ts';
+import { useLocaleSettings } from '../hooks/useLocaleSettings.ts';
+import { PageHeader } from '../components/PageHeader.tsx';
+
+const entrypoint = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+
+async function saveSettings(data: Record<string, string>): Promise<void> {
+  const token = localStorage.getItem('token');
+  const response = await fetch(`${entrypoint}/settings`, {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(data),
+  });
+
+  if (!response.ok) {
+    const error = await response.json().catch(() => ({ error: 'Save failed' }));
+    throw new Error(error.error ?? 'Save failed');
+  }
+}
+
+/**
+ * Global Settings page — manage the default locale and site identity.
+ */
+export function GlobalSettings() {
+  const { app_name, seo_base_url, reload } = useSettings();
+  const { defaultLocale, supportedLocales } = useLocaleSettings();
+  const notify = useNotify();
+  const translate = useTranslate();
+
+  const [selectedDefault, setSelectedDefault] = useState(defaultLocale);
+  const [savingLocale, setSavingLocale] = useState(false);
+
+  const [appName, setAppName] = useState(app_name ?? '');
+  const [baseUrl, setBaseUrl] = useState(seo_base_url ?? '');
+  const [savingSite, setSavingSite] = useState(false);
+
+  useEffect(() => {
+    setSelectedDefault(defaultLocale);
+  }, [defaultLocale]);
+
+  useEffect(() => {
+    setAppName(app_name ?? '');
+  }, [app_name]);
+
+  useEffect(() => {
+    setBaseUrl(seo_base_url ?? '');
+  }, [seo_base_url]);
+
+  const localeChanged = selectedDefault !== defaultLocale;
+  const siteChanged = appName !== (app_name ?? '') || baseUrl !== (seo_base_url ?? '');
+
+  const handleSaveLocale = async () => {
+    setSavingLocale(true);
+    try {
+      await saveSettings({ default_locale: selectedDefault });
+      reload();
+      notify('psyched.settings.locale_saved', { type: 'success', messageArgs: { _: 'Default locale saved' } });
+    } catch (err) {
+      notify(err instanceof Error ? err.message : 'Failed to save', { type: 'error' });
+    } finally {
+      setSavingLocale(false);
+    }
+  };
+
+  const handleSaveSite = async () => {
+    setSavingSite(true);
+    try {
+      await saveSettings({ app_name: appName, seo_base_url: baseUrl || null });
+      reload();
+      notify('psyched.settings.settings_saved', { type: 'success', messageArgs: { _: 'Settings saved' } });
+    } catch (err) {
+      notify(err instanceof Error ? err.message : 'Failed to save', { type: 'error' });
+    } finally {
+      setSavingSite(false);
+    }
+  };
+
+  const defaultLanguageLabel = translate('psyched.settings.default_language', { _: 'Default Language' });
+
+  return (
+    <>
+      <PageHeader title={translate('psyched.settings.global_settings_title', { _: 'Global Settings' })} />
+
+      <Card variant="outlined" sx={{ mb: 3 }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+            <WebIcon />
+            <Typography variant="h6">
+              {translate('psyched.settings.site_section', { _: 'Site Identity' })}
+            </Typography>
+          </Box>
+
+          <TextField
+            label={translate('psyched.settings.app_name', { _: 'Site Name' })}
+            value={appName}
+            onChange={(e) => setAppName(e.target.value)}
+            placeholder="PsychedCMS"
+            helperText={appName ? '' : 'Default: PsychedCMS'}
+            sx={{ maxWidth: 400, mb: 3 }}
+          />
+
+          <TextField
+            label={translate('psyched.settings.base_url', { _: 'Site URL' })}
+            value={baseUrl}
+            onChange={(e) => setBaseUrl(e.target.value)}
+            placeholder="https://hilo.local"
+            helperText={translate('psyched.settings.base_url_helper', { _: 'Public URL of the site (no trailing slash)' })}
+            sx={{ maxWidth: 400, mb: 3 }}
+          />
+
+          <Box>
+            <Button
+              variant="contained"
+              startIcon={<SaveIcon />}
+              onClick={handleSaveSite}
+              disabled={!siteChanged || savingSite}
+            >
+              {savingSite
+                ? translate('psyched.settings.saving', { _: 'Saving...' })
+                : translate('psyched.settings.save', { _: 'Save' })}
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
+
+      <Card variant="outlined" sx={{ mb: 3 }}>
+        <CardContent>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+            <LanguageIcon />
+            <Typography variant="h6">
+              {translate('psyched.settings.language_section', { _: 'Language' })}
+            </Typography>
+          </Box>
+
+          <FormControl sx={{ minWidth: 200, mb: 3 }}>
+            <InputLabel>{defaultLanguageLabel}</InputLabel>
+            <Select
+              value={selectedDefault}
+              label={defaultLanguageLabel}
+              onChange={(e) => setSelectedDefault(e.target.value)}
+            >
+              {supportedLocales.map((loc) => (
+                <MenuItem key={loc} value={loc}>
+                  {loc.toUpperCase()}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+
+          <Box>
+            <Button
+              variant="contained"
+              startIcon={<SaveIcon />}
+              onClick={handleSaveLocale}
+              disabled={!localeChanged || savingLocale}
+            >
+              {savingLocale
+                ? translate('psyched.settings.saving', { _: 'Saving...' })
+                : translate('psyched.settings.save', { _: 'Save' })}
+            </Button>
+          </Box>
+        </CardContent>
+      </Card>
+    </>
+  );
+}
