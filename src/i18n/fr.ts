@@ -86,6 +86,7 @@ export const frMessages = {
             meta_description: 'Description meta',
             og_image: 'URL image OG',
             canonical_url: 'URL canonique',
+            banner: 'Bannière',
             robots_index: 'Indexer',
             robots_follow: 'Suivre les liens',
         },

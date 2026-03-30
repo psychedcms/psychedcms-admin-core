@@ -85,6 +85,7 @@ export const enMessages = {
             meta_description: 'Meta Description',
             og_image: 'OG Image URL',
             canonical_url: 'Canonical URL',
+            banner: 'Banner',
             robots_index: 'Index',
             robots_follow: 'Follow Links',
         },
