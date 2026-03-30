@@ -3,6 +3,7 @@ import { Box, Typography, Collapse, IconButton, CircularProgress, Tooltip } from
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ExpandLessIcon from '@mui/icons-material/ExpandLess';
 import TranslateIcon from '@mui/icons-material/Translate';
+import { useFormContext } from 'react-hook-form';
 
 import { useTranslationReference } from '../hooks/useTranslationReference.ts';
 import { useLocaleSettings } from '../hooks/useLocaleSettings.ts';
@@ -28,7 +29,6 @@ const FLAG_EMOJI: Record<string, string> = {
 
 interface TranslationReferencePanelProps {
   source: string;
-  onTranslate?: (translatedText: string) => void;
 }
 
 /**
@@ -37,13 +37,14 @@ interface TranslationReferencePanelProps {
  * Renders nothing when editing in the default locale or when no reference
  * content is available.
  *
- * When `onTranslate` is provided, shows a translate button that calls the
- * AI translation endpoint and passes the result to the callback.
+ * Shows a translate button that calls the AI translation endpoint
+ * and fills the form field with the translated text.
  */
-export function TranslationReferencePanel({ source, onTranslate }: TranslationReferencePanelProps) {
+export function TranslationReferencePanel({ source }: TranslationReferencePanelProps) {
   const { getReferenceValue, isNonDefaultLocale } = useTranslationReference();
   const { defaultLocale } = useLocaleSettings();
   const editLocale = useSyncExternalStore(subscribeEditLocale, getEditLocale);
+  const form = useFormContext();
   const [expanded, setExpanded] = useState(false);
   const [translating, setTranslating] = useState(false);
 
@@ -51,7 +52,7 @@ export function TranslationReferencePanel({ source, onTranslate }: TranslationRe
 
   const handleTranslate = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!onTranslate || !referenceContent) return;
+    if (!referenceContent || !form) return;
 
     setTranslating(true);
     try {
@@ -68,14 +69,14 @@ export function TranslationReferencePanel({ source, onTranslate }: TranslationRe
 
       if (response.ok) {
         const data = await response.json();
-        onTranslate(data.translated);
+        form.setValue(source, data.translated, { shouldDirty: true });
       }
     } catch {
       // Silent fail — user can retry
     } finally {
       setTranslating(false);
     }
-  }, [onTranslate, referenceContent, defaultLocale, editLocale, source]);
+  }, [referenceContent, defaultLocale, editLocale, source, form]);
 
   if (!isNonDefaultLocale || !referenceContent) return null;
 
@@ -105,20 +106,18 @@ export function TranslationReferencePanel({ source, onTranslate }: TranslationRe
           {localeLabel}
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          {onTranslate && (
-            <Tooltip title="Translate with AI">
-              <IconButton
-                size="small"
-                onClick={handleTranslate}
-                disabled={translating}
-                color="primary"
-              >
-                {translating
-                  ? <CircularProgress size={16} />
-                  : <TranslateIcon fontSize="small" />}
-              </IconButton>
-            </Tooltip>
-          )}
+          <Tooltip title="Translate with AI">
+            <IconButton
+              size="small"
+              onClick={handleTranslate}
+              disabled={translating}
+              color="primary"
+            >
+              {translating
+                ? <CircularProgress size={16} />
+                : <TranslateIcon fontSize="small" />}
+            </IconButton>
+          </Tooltip>
           <IconButton size="small">
             {expanded ? <ExpandLessIcon fontSize="small" /> : <ExpandMoreIcon fontSize="small" />}
           </IconButton>
