@@ -238,13 +238,11 @@ export function InputGuesser({ source, resource: resourceProp }: InputGuesserPro
     if (meta.readonly) return null;
 
     const resourceKey = `resources.${resource}.fields.${source}`;
-    const resourceTranslated = translate(resourceKey);
+    const resourceTranslated = translate(resourceKey, { _: '' });
     const globalKey = `psyched.fields.${source}`;
-    const globalTranslated = translate(globalKey);
+    const globalTranslated = translate(globalKey, { _: '' });
     const label = meta.label
-        ? (resourceTranslated !== resourceKey ? resourceTranslated
-            : globalTranslated !== globalKey ? globalTranslated
-            : meta.label)
+        ? (resourceTranslated || globalTranslated || meta.label)
         : undefined;
     const required = meta.required ?? false;
     const isTranslatable = meta.translatable === true;
