@@ -75,6 +75,7 @@ export { useTranslationReference } from './hooks/useTranslationReference.ts';
 export { PsychedSchemaContext, usePsychedSchemaContext } from './providers/PsychedSchemaContext.ts';
 export type { PsychedSchemaContextValue } from './providers/PsychedSchemaContext.ts';
 export { setTranslationReference } from './providers/TranslationReferenceStore.ts';
+export { setEditLocale, getEditLocale, subscribeEditLocale } from './providers/EditLocaleStore.ts';
 export type { ContentTypeMetadata, FieldType, FieldMetadata, ResourceSchema, PsychedSchema, OpenApiProperty, OpenApiSchema, OpenApiComponents, OpenApiDocument, WorkflowState, TransitionMeta } from './types/psychedcms.ts';
 export { GlobalSettings, PreferencesSettings } from './settings/index.ts';
 

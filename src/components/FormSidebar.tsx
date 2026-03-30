@@ -1,4 +1,5 @@
 import {
+  Button,
   Card,
   CardContent,
   Typography,
@@ -9,6 +10,7 @@ import {
 import LinkIcon from '@mui/icons-material/Link';
 import SettingsIcon from '@mui/icons-material/Settings';
 import StarIcon from '@mui/icons-material/Star';
+import UndoIcon from '@mui/icons-material/Undo';
 import {
   useRecordContext,
   SaveButton,
@@ -17,6 +19,7 @@ import {
   useTranslate,
   useLocaleState,
 } from 'react-admin';
+import { useFormContext } from 'react-hook-form';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale/fr';
 import { enUS } from 'date-fns/locale/en-US';
@@ -70,6 +73,8 @@ export function FormSidebar({ resource: resourceProp }: FormSidebarProps) {
   const [uiLocale] = useLocaleState();
   const resourceSchema = usePsychedSchema(resource ?? '');
 
+  const form = useFormContext();
+
   const sidebarFields = resourceSchema?.fields
     ? [...resourceSchema.fields.entries()].filter(
         ([, meta]) => meta.group === 'sidebar',
@@ -104,6 +109,16 @@ export function FormSidebar({ resource: resourceProp }: FormSidebarProps) {
 
           <Box sx={{ display: 'flex', gap: 1, mb: 2, flexWrap: 'wrap' }}>
             <SaveButton />
+            <Button
+              size="small"
+              variant="outlined"
+              color="inherit"
+              startIcon={<UndoIcon />}
+              onClick={() => form.reset()}
+              disabled={!form.formState.isDirty}
+            >
+              {translate('ra.action.cancel')}
+            </Button>
             {record && <ViewOnSiteButton />}
             {record && <WorkflowButton resource={resource} />}
           </Box>

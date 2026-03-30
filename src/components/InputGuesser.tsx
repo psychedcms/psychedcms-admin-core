@@ -13,7 +13,7 @@ import {
     useResourceContext,
     useTranslate,
 } from 'react-admin';
-import { useWatch } from 'react-hook-form';
+import { useWatch, useFormContext } from 'react-hook-form';
 import { PsychedRichTextInput } from '@psychedcms/admin-richtext';
 import { Box, IconButton, Chip } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
@@ -229,6 +229,11 @@ export function InputGuesser({ source, resource: resourceProp }: InputGuesserPro
     const translate = useTranslate();
     const { schema: fullSchema } = usePsychedSchemaContext();
     const meta = useFieldMetadata(resource, source);
+    const form = useFormContext();
+
+    const handleTranslate = useCallback((translatedText: string) => {
+        form.setValue(source, translatedText, { shouldDirty: true });
+    }, [form, source]);
 
     if (!meta) {
         return <TextInput source={source} />;
@@ -253,7 +258,7 @@ export function InputGuesser({ source, resource: resourceProp }: InputGuesserPro
         if (!isTranslatable) return input;
         return (
             <>
-                <TranslationReferencePanel source={source} />
+                <TranslationReferencePanel source={source} onTranslate={handleTranslate} />
                 {input}
             </>
         );
