@@ -88,11 +88,6 @@ export const frMessages = {
             canonical_url: 'URL canonique',
             robots_index: 'Indexer',
             robots_follow: 'Suivre les liens',
-            bands: 'Groupes',
-            events: 'Événements',
-            releases: 'Sorties',
-            tours: 'Tournées',
-            festivals: 'Festivals',
         },
         workflow: {
             publish: 'Publier',

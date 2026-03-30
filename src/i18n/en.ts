@@ -87,11 +87,6 @@ export const enMessages = {
             canonical_url: 'Canonical URL',
             robots_index: 'Index',
             robots_follow: 'Follow Links',
-            bands: 'Bands',
-            events: 'Events',
-            releases: 'Releases',
-            tours: 'Tours',
-            festivals: 'Festivals',
         },
         workflow: {
             publish: 'Publish',
