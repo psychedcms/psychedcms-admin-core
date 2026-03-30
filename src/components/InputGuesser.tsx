@@ -95,12 +95,12 @@ function buildSelectChoices(
             const resKey = `resources.${resource}.values.${source}.${v}`;
             const globalKey = `psyched.values.${source}.${v}`;
             const statusKey = `psyched.status.${v}`;
-            const resT = translate(resKey);
-            if (resT !== resKey) return { id: v, name: resT };
-            const globalT = translate(globalKey);
-            if (globalT !== globalKey) return { id: v, name: globalT };
-            const statusT = translate(statusKey);
-            if (statusT !== statusKey) return { id: v, name: statusT };
+            const resT = translate(resKey, { _: '' });
+            if (resT) return { id: v, name: resT };
+            const globalT = translate(globalKey, { _: '' });
+            if (globalT) return { id: v, name: globalT };
+            const statusT = translate(statusKey, { _: '' });
+            if (statusT) return { id: v, name: statusT };
             return { id: v, name: v.charAt(0).toUpperCase() + v.slice(1) };
         });
     }
