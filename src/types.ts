@@ -120,8 +120,16 @@ export interface ListAction {
   position?: number;
 }
 
+export interface MainPage {
+  path: string;
+  component: ComponentType;
+  menuLabel: string;
+  menuIcon?: ComponentType;
+}
+
 export interface PluginRegistration {
   dashboard?: ComponentType;
+  mainPages?: MainPage[];
   sidebarWidgets?: SidebarWidget[];
   adminPages?: AdminPage[];
   settingsPages?: SettingsPage[];

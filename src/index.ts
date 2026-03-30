@@ -3,6 +3,7 @@ import './defaults.ts';
 export type {
   PluginRegistration,
   SidebarWidget,
+  MainPage,
   AdminPage,
   SettingsPage,
   ToolPage,
@@ -30,6 +31,7 @@ export {
   freezeRegistry,
   getDashboard,
   getSidebarWidgets,
+  getMainPages,
   getAdminPages,
   getSettingsPages,
   getToolPages,
@@ -109,3 +111,6 @@ export { PsychedUserMenu } from './components/PsychedUserMenu.tsx';
 export { ChildContentSection } from './components/ChildContentSection.tsx';
 export { AggregateRelationSection } from './components/AggregateRelationSection.tsx';
 export { CollectionInput } from './components/CollectionInput.tsx';
+
+// Utils
+export { resolveIcon, resolveIconComponent } from './utils/resolveIcon.ts';

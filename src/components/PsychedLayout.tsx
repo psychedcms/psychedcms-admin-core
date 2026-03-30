@@ -5,9 +5,10 @@ import { useNavigate } from 'react-router-dom';
 import DashboardIcon from '@mui/icons-material/Speed';
 import { AppBarSlot } from '../slots/AppBarSlot.tsx';
 import { usePsychedSchemaContext } from '../providers/PsychedSchemaContext.ts';
-import { getAdminPages, getToolPages, getDashboard } from '../registry.ts';
+import { getMainPages, getAdminPages, getToolPages, getDashboard } from '../registry.ts';
 import { PsychedUserMenu } from './PsychedUserMenu.tsx';
 import { BreadcrumbBar, BreadcrumbProvider } from './BreadcrumbBar.tsx';
+import { resolveIcon } from '../utils/resolveIcon.ts';
 import type { ContentTypeMetadata } from '../types/psychedcms.ts';
 
 const CONTENT_MAX_WIDTH = 1400;
@@ -131,6 +132,7 @@ function useAdminResources() {
 
 function PsychedMenu() {
     const allAdminPages = getAdminPages();
+    const mainPages = getMainPages();
     const toolPages = getToolPages();
     const adminResources = useAdminResources();
     const translate = useTranslate();
@@ -166,6 +168,14 @@ function PsychedMenu() {
                         primaryText={translate('psyched.menu.dashboard', { _: 'Dashboard' })}
                         leftIcon={<DashboardIcon />}
                     />
+                    {mainPages.map((page) => (
+                        <MenuItemLink
+                            key={page.path}
+                            to={`/main/${page.path}`}
+                            primaryText={translate(page.menuLabel, { _: page.menuLabel })}
+                            leftIcon={page.menuIcon ? createElement(page.menuIcon) : undefined}
+                        />
+                    ))}
                 </List>
             )}
             {sortedGroupNames.map((groupName, idx) => {
@@ -180,6 +190,7 @@ function PsychedMenu() {
                                     key={entry.slug}
                                     to={`/${entry.slug}`}
                                     primaryText={translate(`resources.${entry.slug}.name`, { _: entry.label })}
+                                    leftIcon={resolveIcon(entry.contentType.icon)}
                                 />
                             ))}
                         </List>

@@ -23,6 +23,7 @@ import { getDashboard } from '../registry.ts';
 import { darkTheme, lightTheme } from '../theme.ts';
 import { Route } from 'react-router-dom';
 import { renderAdminRoutes } from '../slots/AdminRoutes.tsx';
+import { renderMainRoutes } from '../slots/MainRoutes.tsx';
 import { renderSettingsRoutes } from '../slots/SettingsRoutes.tsx';
 import { renderToolRoutes } from '../slots/ToolRoutes.tsx';
 import { ProfilePage } from './ProfilePage.tsx';
@@ -107,6 +108,7 @@ export function PsychedApp({
         );
     }
 
+    const mainRoutes = renderMainRoutes();
     const adminRoutes = renderAdminRoutes();
     const settingsRoutes = renderSettingsRoutes();
     const toolRoutes = renderToolRoutes();
@@ -148,6 +150,7 @@ export function PsychedApp({
                         <Route path="/set-password" element={<SetPasswordPage />} />
                     </CustomRoutes>
                     <CustomRoutes>
+                        {mainRoutes}
                         {adminRoutes}
                         {settingsRoutes}
                         {toolRoutes}

@@ -1,6 +1,7 @@
 import type {
   PluginRegistration,
   SidebarWidget,
+  MainPage,
   AdminPage,
   SettingsPage,
   ToolPage,
@@ -51,6 +52,10 @@ export function getSidebarWidgets(resource?: string): SidebarWidget[] {
   return registry.flatMap((p) => p.sidebarWidgets ?? []).filter(
     (w) => !w.resource || w.resource === resource,
   ).sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
+}
+
+export function getMainPages(): MainPage[] {
+  return registry.flatMap((p) => p.mainPages ?? []);
 }
 
 export function getSettingsPages(): SettingsPage[] {
