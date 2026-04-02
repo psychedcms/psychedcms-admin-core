@@ -1,12 +1,22 @@
 import { type DataProvider, HttpError } from 'react-admin';
 import { buildHttpClient } from '../slots/usePluginHttpClient.ts';
+import type { PsychedSchema } from '../types/psychedcms.ts';
 
 /**
  * Data provider for API Platform (Hydra JSON-LD format).
- * Maps hydra:member/hydra:totalItems to React Admin's expected format.
- * Uses PsychedCMS plugin HTTP middleware (e.g. locale headers from translatable).
+ *
+ * Read path:  Embedded relation objects are normalized to their slug (`id` field)
+ *             so react-admin URLs stay clean (/#/bands/graveyard).
+ * Write path: Slug values for relation fields are converted back to IRIs
+ *             (/api/bands/graveyard) before sending, per JSON-LD standard.
+ *
+ * The schema getter provides field metadata (type + reference) needed
+ * for the slug→IRI transform at save time.
  */
-export const createHydraDataProvider = (apiUrl: string): DataProvider => {
+export const createHydraDataProvider = (
+    apiUrl: string,
+    getSchema?: () => PsychedSchema | null,
+): DataProvider => {
     const pluginFetch = buildHttpClient(async (url: URL, init?: RequestInit) => {
         return fetch(url, init);
     });
@@ -36,6 +46,41 @@ export const createHydraDataProvider = (apiUrl: string): DataProvider => {
         }
 
         return { status: response.status, headers: response.headers, body: text, json };
+    };
+
+    /**
+     * Convert slug values to IRIs for relation fields before sending to the API.
+     * Uses the schema to identify relation fields and their target resource.
+     *
+     * Example: { bands: ["graveyard"] } → { bands: ["/api/bands/graveyard"] }
+     */
+    const slugsToIris = (resource: string, data: Record<string, unknown>): Record<string, unknown> => {
+        const schema = getSchema?.();
+        if (!schema) return data;
+
+        const resourceSchema = schema.resources.get(resource);
+        if (!resourceSchema) return data;
+
+        const result = { ...data };
+        for (const [fieldName, fieldMeta] of resourceSchema.fields) {
+            if (fieldMeta.type !== 'relation' || !fieldMeta.reference) continue;
+            const value = result[fieldName];
+            if (value == null) continue;
+
+            const toIri = (v: unknown): unknown => {
+                if (typeof v !== 'string') return v;
+                // Already an IRI — pass through
+                if (v.startsWith('/')) return v;
+                return `/api/${fieldMeta.reference}/${v}`;
+            };
+
+            if (Array.isArray(value)) {
+                result[fieldName] = value.map(toIri);
+            } else {
+                result[fieldName] = toIri(value);
+            }
+        }
+        return result;
     };
 
     return {
@@ -100,7 +145,7 @@ export const createHydraDataProvider = (apiUrl: string): DataProvider => {
         create: async (resource, params) => {
             const { json } = await httpClient(`${apiUrl}/${resource}`, {
                 method: 'POST',
-                body: JSON.stringify(params.data),
+                body: JSON.stringify(slugsToIris(resource, params.data)),
             });
             return { data: addId(json) };
         },
@@ -108,7 +153,7 @@ export const createHydraDataProvider = (apiUrl: string): DataProvider => {
         update: async (resource, params) => {
             const { json } = await httpClient(`${apiUrl}/${resource}/${params.id}`, {
                 method: 'PATCH',
-                body: JSON.stringify(params.data),
+                body: JSON.stringify(slugsToIris(resource, params.data)),
                 headers: { 'Content-Type': 'application/merge-patch+json' },
             });
             return { data: addId(json) };
@@ -119,7 +164,7 @@ export const createHydraDataProvider = (apiUrl: string): DataProvider => {
                 params.ids.map((id) =>
                     httpClient(`${apiUrl}/${resource}/${id}`, {
                         method: 'PUT',
-                        body: JSON.stringify(params.data),
+                        body: JSON.stringify(slugsToIris(resource, params.data)),
                     })
                 )
             );
@@ -146,20 +191,24 @@ export const createHydraDataProvider = (apiUrl: string): DataProvider => {
     };
 };
 
-/** Extract numeric id from Hydra @id IRI or use existing id field */
+/**
+ * Set react-admin record id from the API response.
+ * PsychedCMS entities serialize slug as `id` via ApiProperty(identifier: true).
+ * If `id` is missing, extract it from the @id IRI.
+ */
 function addId(record: any): any {
     if (record.id !== undefined) {
         return normalizeRelations(record);
     }
-    // Extract id from @id IRI like "/api/bands/5"
     const iri: string = record['@id'] || '';
-    const match = iri.match(/\/(\d+)$/);
-    return normalizeRelations({ ...record, id: match ? parseInt(match[1], 10) : iri });
+    const match = iri.match(/\/([^/]+)$/);
+    return normalizeRelations({ ...record, id: match ? match[1] : iri });
 }
 
 /**
- * Convert embedded Hydra objects to their numeric IDs so that
- * ReferenceInput/AutocompleteInput can match them against fetched choices.
+ * Convert embedded Hydra relation objects to their slug (id field).
+ * This keeps form state and react-admin URLs slug-based.
+ * The reverse transform (slug→IRI) happens in slugsToIris() at save time.
  */
 function normalizeRelations(record: any): any {
     const result = { ...record };
@@ -178,8 +227,12 @@ function normalizeRelations(record: any): any {
     return result;
 }
 
-function extractId(obj: { '@id': string; id?: number }): number | string {
+/**
+ * Extract the slug identifier from an embedded Hydra object.
+ * Prefers `id` (slug via ApiProperty) over parsing `@id` (IRI).
+ */
+function extractId(obj: { '@id': string; id?: string | number }): string | number {
     if (obj.id !== undefined) return obj.id;
-    const match = obj['@id'].match(/\/(\d+)$/);
-    return match ? parseInt(match[1], 10) : obj['@id'];
+    const match = obj['@id'].match(/\/([^/]+)$/);
+    return match ? match[1] : obj['@id'];
 }

@@ -1,4 +1,4 @@
-import { type ComponentType, type ReactNode, useMemo } from 'react';
+import { type ComponentType, type ReactNode, useMemo, useRef, useEffect } from 'react';
 import {
     Admin,
     Resource,
@@ -61,6 +61,8 @@ export function PsychedApp({
     children,
 }: PsychedAppProps) {
     const { schema, loading, error } = useOpenApiSchema(apiUrl);
+    const schemaRef = useRef(schema);
+    useEffect(() => { schemaRef.current = schema; }, [schema]);
 
     const schemaContextValue = useMemo(
         () => ({ schema, loading, error, entrypoint: apiUrl }),
@@ -68,7 +70,7 @@ export function PsychedApp({
     );
 
     const resolvedDataProvider = useMemo(
-        () => dataProvider ?? createHydraDataProvider(apiUrl),
+        () => dataProvider ?? createHydraDataProvider(apiUrl, () => schemaRef.current),
         [dataProvider, apiUrl],
     );
 
