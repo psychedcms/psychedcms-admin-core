@@ -26,7 +26,7 @@ export function ViewOnSiteButton() {
   const path = canonicalUrl[uiLocale] ?? Object.values(canonicalUrl)[0];
   if (!path) return null;
 
-  const href = `${FRONTEND_URL}${path}`;
+  const href = `${FRONTEND_URL}/preview${path}`;
 
   return (
     <Button
