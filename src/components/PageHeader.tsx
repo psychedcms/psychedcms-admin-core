@@ -1,12 +1,13 @@
 import { Box, Typography } from '@mui/material';
-import type { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 
 interface PageHeaderProps {
     title: string;
+    icon?: ReactElement | null;
     actions?: ReactNode;
 }
 
-export function PageHeader({ title, actions }: PageHeaderProps) {
+export function PageHeader({ title, icon, actions }: PageHeaderProps) {
     return (
         <Box sx={{
             display: 'flex',
@@ -14,7 +15,10 @@ export function PageHeader({ title, actions }: PageHeaderProps) {
             justifyContent: 'space-between',
             mb: 2,
         }}>
-            <Typography variant="h5" fontWeight={600}>{title}</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                {icon}
+                <Typography variant="h5" fontWeight={600}>{title}</Typography>
+            </Box>
             {actions && (
                 <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
                     {actions}

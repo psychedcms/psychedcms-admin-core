@@ -10,6 +10,7 @@ import { usePsychedSchema } from '../hooks/usePsychedSchema.ts';
 import { usePsychedSchemaContext } from '../providers/PsychedSchemaContext.ts';
 import { PageHeader } from './PageHeader.tsx';
 import { useSetBreadcrumbs } from './BreadcrumbBar.tsx';
+import { resolveIcon } from '../utils/resolveIcon.ts';
 import { runBeforeSaveHooks, runAfterSaveHooks } from '../slots/usePluginSaveHooks.ts';
 import { getChildContentOverride } from '../registry.ts';
 import { useCallback, useMemo } from 'react';
@@ -84,7 +85,7 @@ function EditPageHeader() {
         return () => setBreadcrumbs(null);
     }, [sectionLabel, resourceLabel, resource, recordTitle, setBreadcrumbs]);
 
-    return <PageHeader title={String(recordTitle)} />;
+    return <PageHeader title={String(recordTitle)} icon={resolveIcon(schema?.contentType?.icon)} />;
 }
 
 export function ContentEdit() {
