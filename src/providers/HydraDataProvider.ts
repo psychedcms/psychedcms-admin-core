@@ -61,8 +61,21 @@ export const createHydraDataProvider = (
         const resourceSchema = schema.resources.get(resource);
         if (!resourceSchema) return data;
 
+        // Strip Hydra metadata, react-admin internal fields, and read-only metadata
         const result = { ...data };
+        for (const key of Object.keys(result)) {
+            if (key.startsWith('@')) delete result[key];
+        }
+        delete result['id'];
+        delete result['createdAt'];
+        delete result['updatedAt'];
+
         for (const [fieldName, fieldMeta] of resourceSchema.fields) {
+            // Remove read-only collection fields (managed server-side)
+            if (fieldMeta.display === 'table') {
+                delete result[fieldName];
+                continue;
+            }
             if (fieldMeta.type !== 'relation' || !fieldMeta.reference) continue;
             const value = result[fieldName];
             if (value == null) continue;
@@ -110,15 +123,22 @@ export const createHydraDataProvider = (
         },
 
         getOne: async (resource, params) => {
-            const { json } = await httpClient(`${apiUrl}/${resource}/${params.id}`);
+            const url = String(params.id).startsWith('/api/')
+                ? `${apiUrl.replace(/\/api$/, '')}${params.id}`
+                : `${apiUrl}/${resource}/${params.id}`;
+            const { json } = await httpClient(url);
             return { data: addId(json) };
         },
 
         getMany: async (resource, params) => {
             const results = await Promise.all(
-                params.ids.map((id) =>
-                    httpClient(`${apiUrl}/${resource}/${id}`).then(({ json }) => addId(json))
-                )
+                params.ids.map((id) => {
+                    // If id is already an IRI (e.g. /api/media/01KN...), use it directly
+                    const url = String(id).startsWith('/api/')
+                        ? `${apiUrl.replace(/\/api$/, '')}${id}`
+                        : `${apiUrl}/${resource}/${id}`;
+                    return httpClient(url).then(({ json }) => addId(json));
+                })
             );
             return { data: results };
         },
@@ -151,9 +171,10 @@ export const createHydraDataProvider = (
         },
 
         update: async (resource, params) => {
+            const cleaned = slugsToIris(resource, params.data);
             const { json } = await httpClient(`${apiUrl}/${resource}/${params.id}`, {
                 method: 'PATCH',
-                body: JSON.stringify(slugsToIris(resource, params.data)),
+                body: JSON.stringify(cleaned),
                 headers: { 'Content-Type': 'application/merge-patch+json' },
             });
             return { data: addId(json) };

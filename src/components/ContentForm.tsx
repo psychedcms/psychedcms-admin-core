@@ -152,11 +152,12 @@ function groupFieldsByGroup(
   if (!fields) return groups;
 
   for (const [fieldName, metadata] of fields) {
+    const group = metadata.group ?? 'general';
     if (isSidebarField(fieldName, metadata)) continue;
     if (!isFormVisible(metadata)) continue;
     if (metadata.display === 'table') continue;
+    if (group.startsWith('_')) continue;
 
-    const group = metadata.group ?? 'general';
     if (!groups.has(group)) {
       groups.set(group, []);
     }
@@ -183,11 +184,12 @@ function getGroupOrder(
   if (!fields) return order;
 
   for (const [fieldName, metadata] of fields) {
+    const group = metadata.group ?? 'general';
     if (isSidebarField(fieldName, metadata)) continue;
     if (!isFormVisible(metadata)) continue;
     if (metadata.display === 'table') continue;
+    if (group.startsWith('_')) continue;
 
-    const group = metadata.group ?? 'general';
     if (!seen.has(group)) {
       seen.add(group);
       order.push(group);
