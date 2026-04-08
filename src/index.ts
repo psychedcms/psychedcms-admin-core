@@ -50,6 +50,7 @@ export {
   getListFilters,
   getListBulkActions,
   getListActions,
+  getCustomRoutes,
 } from './registry.ts';
 
 export { SidebarSlot } from './slots/SidebarSlot.tsx';

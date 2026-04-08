@@ -138,6 +138,10 @@ export function getListActions(resource?: string): ListAction[] {
   ).sort((a, b) => (a.position ?? 0) - (b.position ?? 0));
 }
 
+export function getCustomRoutes(): PluginRegistration['customRoutes'] {
+  return registry.flatMap((p) => p.customRoutes ?? []);
+}
+
 export function getEditorContentTransforms(): EditorContentTransform[] {
   return registry.flatMap((p) => p.editorContentTransforms ?? []).sort(
     (a, b) => (a.position ?? 0) - (b.position ?? 0),

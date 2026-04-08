@@ -13,6 +13,7 @@ registerPlugin({
       component: GlobalSettings,
       menuLabel: 'psyched.menu.global_settings',
       menuIcon: SettingsIcon,
+      permission: 'settings:manage',
     },
   ],
 });

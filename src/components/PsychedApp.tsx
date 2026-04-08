@@ -19,7 +19,7 @@ import { useOpenApiSchema } from '../providers/SchemaProvider.tsx';
 import { PsychedSchemaContext } from '../providers/PsychedSchemaContext.ts';
 import { createHydraDataProvider } from '../providers/HydraDataProvider.ts';
 import { AppWrapperSlot } from '../slots/AppWrapperSlot.tsx';
-import { getDashboard } from '../registry.ts';
+import { getDashboard, getCustomRoutes } from '../registry.ts';
 import { darkTheme, lightTheme } from '../theme.ts';
 import { Route } from 'react-router-dom';
 import { renderAdminRoutes } from '../slots/AdminRoutes.tsx';
@@ -42,6 +42,7 @@ interface PsychedAppProps {
     i18nProvider?: I18nProvider;
     dataProvider?: DataProvider;
     layout?: ComponentType<any>;
+    loginPage?: ReactNode;
     appName?: string;
     children?: ReactNode;
 }
@@ -57,6 +58,7 @@ export function PsychedApp({
     i18nProvider,
     dataProvider,
     layout: LayoutComponent = PsychedLayout,
+    loginPage,
     appName,
     children,
 }: PsychedAppProps) {
@@ -128,7 +130,7 @@ export function PsychedApp({
                     darkTheme={darkTheme}
                     lightTheme={lightTheme}
                     defaultTheme="dark"
-                    loginPage={<PsychedLoginPage />}
+                    loginPage={loginPage ?? <PsychedLoginPage />}
                     requireAuth
                 >
                     {schema && Array.from(schema.resources.entries()).map(([slug, res]) => {
@@ -150,6 +152,10 @@ export function PsychedApp({
                         <Route path="/forgot-password" element={<ForgotPasswordPage />} />
                         <Route path="/reset-password" element={<ResetPasswordPage />} />
                         <Route path="/set-password" element={<SetPasswordPage />} />
+                        {getCustomRoutes()?.filter((r) => r.noLayout).map((r) => {
+                            const Comp = r.component;
+                            return <Route key={r.path} path={r.path} element={<Comp />} />;
+                        })}
                     </CustomRoutes>
                     <CustomRoutes>
                         {mainRoutes}
@@ -157,6 +163,10 @@ export function PsychedApp({
                         {settingsRoutes}
                         {toolRoutes}
                         <Route path="/profile" element={<ProfilePage />} />
+                        {getCustomRoutes()?.filter((r) => !r.noLayout).map((r) => {
+                            const Comp = r.component;
+                            return <Route key={r.path} path={r.path} element={<Comp />} />;
+                        })}
                     </CustomRoutes>
                 </Admin>
             </AppWrapperSlot>

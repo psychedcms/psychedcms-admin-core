@@ -138,10 +138,15 @@ function PsychedMenu() {
     const translate = useTranslate();
     const grouped = useGroupedResources();
     const hasDashboard = !!getDashboard();
+    const { permissions } = usePermissions();
+    const perms = Array.isArray(permissions) ? permissions : [];
 
     const adminPageMap = new Map<string, typeof allAdminPages[0]>();
     for (const page of allAdminPages) {
-        adminPageMap.set(page.path, page);
+        // Show page if no permission required, or if user has the permission
+        if (!page.permission || perms.includes(page.permission)) {
+            adminPageMap.set(page.path, page);
+        }
     }
     const adminPages = Array.from(adminPageMap.values());
 

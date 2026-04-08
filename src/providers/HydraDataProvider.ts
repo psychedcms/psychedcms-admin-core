@@ -81,6 +81,10 @@ export const createHydraDataProvider = (
             if (value == null) continue;
 
             const toIri = (v: unknown): unknown => {
+                // Handle objects with @id (e.g. ImageFieldValue with crop formats)
+                if (typeof v === 'object' && v !== null && '@id' in v) {
+                    return (v as Record<string, unknown>)['@id'] as string;
+                }
                 if (typeof v !== 'string') return v;
                 // Already an IRI — pass through
                 if (v.startsWith('/')) return v;

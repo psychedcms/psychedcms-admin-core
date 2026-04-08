@@ -42,6 +42,7 @@ export interface AdminPage {
   component: ComponentType;
   menuLabel: string;
   menuIcon?: ComponentType;
+  permission?: string;
 }
 
 export interface SettingsPage {
@@ -148,5 +149,7 @@ export interface PluginRegistration {
   listFilters?: ListFilter[];
   listBulkActions?: ListBulkAction[];
   listActions?: ListAction[];
+  customRoutes?: { path: string; component: ComponentType; noLayout?: boolean }[];
+  resources?: { name: string; list?: ComponentType; edit?: ComponentType; create?: ComponentType; show?: ComponentType; icon?: ComponentType; menuLabel?: string }[];
   i18nMessages?: Record<string, Record<string, unknown>>;
 }
