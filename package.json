@@ -1,6 +1,6 @@
 {
   "name": "@psychedcms/admin-core",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "type": "module",
   "main": "src/index.ts",
   "types": "src/index.ts",
@@ -18,6 +18,9 @@
     "@mui/icons-material": ">=6.0.0",
     "@mui/x-date-pickers": "^8.0.0",
     "date-fns": "^4.0.0",
+    "@dnd-kit/core": "^6.0.0",
+    "@dnd-kit/sortable": "^10.0.0",
+    "@dnd-kit/utilities": "^3.0.0",
     "@psychedcms/admin-geolocation": "*",
     "@psychedcms/admin-richtext": "*",
     "@psychedcms/admin-list": "*"

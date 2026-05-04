@@ -72,8 +72,14 @@ export function PsychedApp({
     );
 
     const resolvedDataProvider = useMemo(
-        () => dataProvider ?? createHydraDataProvider(apiUrl, () => schemaRef.current),
-        [dataProvider, apiUrl],
+        () =>
+            dataProvider ??
+            createHydraDataProvider(
+                apiUrl,
+                () => schemaRef.current,
+                () => i18nProvider?.getLocale?.() ?? null,
+            ),
+        [dataProvider, apiUrl, i18nProvider],
     );
 
     const { app_name: apiAppName } = useSettings();

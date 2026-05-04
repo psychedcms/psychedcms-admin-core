@@ -13,9 +13,18 @@ import type { PsychedSchema } from '../types/psychedcms.ts';
  * The schema getter provides field metadata (type + reference) needed
  * for the slug→IRI transform at save time.
  */
+/**
+ * Field types whose values are *relation references* — for these, embedded
+ * objects and IRI strings collapse to slug identifiers on read (so
+ * `<ReferenceInput>` choices match) and slugs expand back to IRIs on write.
+ * Anything else (image / collection / JSON-blob fields) is preserved as-is.
+ */
+const RELATION_FIELD_TYPES = new Set(['relation', 'entity_taxonomy']);
+
 export const createHydraDataProvider = (
     apiUrl: string,
     getSchema?: () => PsychedSchema | null,
+    getLocale?: () => string | null | undefined,
 ): DataProvider => {
     const pluginFetch = buildHttpClient(async (url: URL, init?: RequestInit) => {
         return fetch(url, init);
@@ -28,6 +37,14 @@ export const createHydraDataProvider = (
         headers.set('X-Client-Type', 'admin');
         if (token) {
             headers.set('Authorization', `Bearer ${token}`);
+        }
+        // Forward the admin UI locale so translatable resources (taxonomies in
+        // particular) come back in the editor's chrome language — independent
+        // of the form's edit-locale tab. Without this, pills render in the
+        // server default locale regardless of the admin's UI choice.
+        const locale = getLocale?.();
+        if (locale && !headers.has('Accept-Language')) {
+            headers.set('Accept-Language', locale);
         }
         if (options.body && !headers.has('Content-Type')) {
             headers.set('Content-Type', 'application/ld+json');
@@ -76,19 +93,32 @@ export const createHydraDataProvider = (
                 delete result[fieldName];
                 continue;
             }
-            if (fieldMeta.type !== 'relation' || !fieldMeta.reference) continue;
+            // Determine the reference resource for this field. RelationField
+            // declares it explicitly; EntityTaxonomyField always points at
+            // `taxonomies`. Both expose slug as their API identifier, so
+            // form values are slug strings (cf. standard backend/api.md
+            // "Admin slug→IRI transform").
+            let reference: string | undefined;
+            if (fieldMeta.type === 'relation' && fieldMeta.reference) {
+                reference = fieldMeta.reference;
+            } else if (fieldMeta.type === 'entity_taxonomy') {
+                reference = 'taxonomies';
+            } else {
+                continue;
+            }
             const value = result[fieldName];
             if (value == null) continue;
 
             const toIri = (v: unknown): unknown => {
-                // Handle objects with @id (e.g. ImageFieldValue with crop formats)
+                // Embedded objects with @id (e.g. ImageFieldValue) → use the @id.
                 if (typeof v === 'object' && v !== null && '@id' in v) {
                     return (v as Record<string, unknown>)['@id'] as string;
                 }
                 if (typeof v !== 'string') return v;
-                // Already an IRI — pass through
+                // Already an IRI — pass through.
                 if (v.startsWith('/')) return v;
-                return `/api/${fieldMeta.reference}/${v}`;
+                // Slug string → wrap as IRI.
+                return `/api/${reference}/${v}`;
             };
 
             if (Array.isArray(value)) {
@@ -120,8 +150,9 @@ export const createHydraDataProvider = (
             const url = `${apiUrl}/${resource}?${new URLSearchParams(query)}`;
             const { json } = await httpClient(url);
 
+            const schema = getSchema?.();
             return {
-                data: json['hydra:member'].map(addId),
+                data: json['hydra:member'].map((r: any) => addId(r, schema, resource)),
                 total: json['hydra:totalItems'],
             };
         },
@@ -131,17 +162,18 @@ export const createHydraDataProvider = (
                 ? `${apiUrl.replace(/\/api$/, '')}${params.id}`
                 : `${apiUrl}/${resource}/${params.id}`;
             const { json } = await httpClient(url);
-            return { data: addId(json) };
+            return { data: addId(json, getSchema?.(), resource) };
         },
 
         getMany: async (resource, params) => {
+            const schema = getSchema?.();
             const results = await Promise.all(
                 params.ids.map((id) => {
                     // If id is already an IRI (e.g. /api/media/01KN...), use it directly
                     const url = String(id).startsWith('/api/')
                         ? `${apiUrl.replace(/\/api$/, '')}${id}`
                         : `${apiUrl}/${resource}/${id}`;
-                    return httpClient(url).then(({ json }) => addId(json));
+                    return httpClient(url).then(({ json }) => addId(json, schema, resource));
                 })
             );
             return { data: results };
@@ -160,8 +192,9 @@ export const createHydraDataProvider = (
             const url = `${apiUrl}/${resource}?${new URLSearchParams(query)}`;
             const { json } = await httpClient(url);
 
+            const schema = getSchema?.();
             return {
-                data: json['hydra:member'].map(addId),
+                data: json['hydra:member'].map((r: any) => addId(r, schema, resource)),
                 total: json['hydra:totalItems'],
             };
         },
@@ -171,7 +204,7 @@ export const createHydraDataProvider = (
                 method: 'POST',
                 body: JSON.stringify(slugsToIris(resource, params.data)),
             });
-            return { data: addId(json) };
+            return { data: addId(json, getSchema?.(), resource) };
         },
 
         update: async (resource, params) => {
@@ -181,7 +214,7 @@ export const createHydraDataProvider = (
                 body: JSON.stringify(cleaned),
                 headers: { 'Content-Type': 'application/merge-patch+json' },
             });
-            return { data: addId(json) };
+            return { data: addId(json, getSchema?.(), resource) };
         },
 
         updateMany: async (resource, params) => {
@@ -221,35 +254,69 @@ export const createHydraDataProvider = (
  * PsychedCMS entities serialize slug as `id` via ApiProperty(identifier: true).
  * If `id` is missing, extract it from the @id IRI.
  */
-function addId(record: any): any {
+function addId(record: any, schema?: PsychedSchema | null, resource?: string): any {
     if (record.id !== undefined) {
-        return normalizeRelations(record);
+        return normalizeRelations(record, schema, resource);
     }
     const iri: string = record['@id'] || '';
     const match = iri.match(/\/([^/]+)$/);
-    return normalizeRelations({ ...record, id: match ? match[1] : iri });
+    return normalizeRelations({ ...record, id: match ? match[1] : iri }, schema, resource);
 }
 
 /**
- * Convert embedded Hydra relation objects to their slug (id field).
- * This keeps form state and react-admin URLs slug-based.
+ * Convert embedded Hydra relation objects (and bare IRI strings) to their
+ * slug identifier on read, *but only for fields the schema marks as a
+ * relation*. Image / JSON-blob / collection fields preserve their full
+ * structure — collapsing them would break their server-side denormalizer
+ * (e.g. `MediaIriDenormalizer` only matches `/api/media/...` strings, not
+ * bare ULIDs).
+ *
  * The reverse transform (slug→IRI) happens in slugsToIris() at save time.
  */
-function normalizeRelations(record: any): any {
+function normalizeRelations(record: any, schema?: PsychedSchema | null, resource?: string): any {
     const result = { ...record };
+    const relationFields = collectRelationFieldNames(schema, resource);
     for (const [key, value] of Object.entries(result)) {
         if (key.startsWith('@') || key === 'id') continue;
+        if (!relationFields.has(key)) continue;
         if (Array.isArray(value)) {
-            result[key] = value.map((item) =>
-                item && typeof item === 'object' && '@id' in item
-                    ? extractId(item as any)
-                    : item,
-            );
-        } else if (value && typeof value === 'object' && '@id' in (value as any)) {
-            result[key] = extractId(value as any);
+            result[key] = value.map(normalizeRelationItem);
+        } else if (
+            (value && typeof value === 'object' && '@id' in (value as any)) ||
+            isIriString(value)
+        ) {
+            result[key] = normalizeRelationItem(value);
         }
     }
     return result;
+}
+
+function collectRelationFieldNames(schema: PsychedSchema | null | undefined, resource: string | undefined): Set<string> {
+    if (!schema || !resource) return new Set();
+    const resourceSchema = schema.resources.get(resource);
+    if (!resourceSchema) return new Set();
+    const out = new Set<string>();
+    for (const [fieldName, fieldMeta] of resourceSchema.fields) {
+        if (RELATION_FIELD_TYPES.has(fieldMeta.type)) {
+            out.add(fieldName);
+        }
+    }
+    return out;
+}
+
+function normalizeRelationItem(item: unknown): unknown {
+    if (item && typeof item === 'object' && '@id' in item) {
+        return extractId(item as { '@id': string; id?: string | number });
+    }
+    if (isIriString(item)) {
+        const match = (item as string).match(/\/([^/]+)$/);
+        if (match) return match[1];
+    }
+    return item;
+}
+
+function isIriString(v: unknown): v is string {
+    return typeof v === 'string' && v.startsWith('/api/');
 }
 
 /**

@@ -28,6 +28,7 @@ import { TranslationReferencePanel } from './TranslationReferencePanel.tsx';
 import { usePsychedSchemaContext } from '../providers/PsychedSchemaContext.ts';
 import type { FieldMetadata } from '../types/psychedcms.ts';
 import { CollectionInput } from './CollectionInput.tsx';
+import { CreateTaxonomyOption } from './CreateTaxonomyOption.tsx';
 
 function DatePickerInput({ source, label, required, helperText }: {
     source: string;
@@ -116,7 +117,32 @@ function extractIdFromValue(val: unknown): string | null {
     return null;
 }
 
-function RelationInput({ source, reference, displayField, multiple, label, helperText, navigable }: {
+/**
+ * Parse a `key=value&key2=value2` filter string (as declared on the
+ * EntityTaxonomyField PHP attribute) into the object shape that react-admin's
+ * ReferenceInput / ReferenceArrayInput expect.
+ */
+function parseFieldFilter(filter: unknown): Record<string, unknown> | undefined {
+    if (typeof filter !== 'string' || filter === '') return undefined;
+    const out: Record<string, unknown> = {};
+    for (const pair of filter.split('&')) {
+        const [k, v] = pair.split('=');
+        if (k && v !== undefined) out[k] = v;
+    }
+    return Object.keys(out).length > 0 ? out : undefined;
+}
+
+function RelationInput({
+    source,
+    reference,
+    displayField,
+    multiple,
+    label,
+    helperText,
+    navigable,
+    filter,
+    taxonomyType,
+}: {
     source: string;
     reference: string;
     displayField: string;
@@ -124,6 +150,14 @@ function RelationInput({ source, reference, displayField, multiple, label, helpe
     label?: string;
     helperText?: string;
     navigable?: boolean;
+    /** Static filter applied to the reference query (e.g. `{type: 'genres'}`). */
+    filter?: Record<string, unknown>;
+    /**
+     * When set, the autocomplete exposes an inline "Add a new entry" suggestion
+     * that opens `TaxonomyCreateDialog` pre-filled with this taxonomy type.
+     * Only meaningful when `reference === 'taxonomies'`.
+     */
+    taxonomyType?: string;
 }) {
     const navigate = useNavigate();
     const currentValue = useWatch({ name: source });
@@ -140,15 +174,23 @@ function RelationInput({ source, reference, displayField, multiple, label, helpe
         [displayField],
     );
 
+    // Inline-create affordance: only when the reference is `taxonomies` and the
+    // caller supplied the taxonomy type (so we know which bucket to create in).
+    const createElement =
+        taxonomyType && reference === 'taxonomies'
+            ? <CreateTaxonomyOption taxonomyType={taxonomyType} />
+            : undefined;
+
     if (multiple) {
         return (
-            <ReferenceArrayInput source={source} reference={reference}>
+            <ReferenceArrayInput source={source} reference={reference} filter={filter}>
                 <AutocompleteArrayInput
                     label={label}
                     optionText={displayField}
                     helperText={helperText}
                     filterToQuery={filterToQuery}
                     matchSuggestion={matchSuggestion}
+                    {...(createElement ? { create: createElement } : {})}
                     {...(navigable ? {
                         renderTags: (value: Record<string, unknown>[], getTagProps: (params: { index: number }) => Record<string, unknown>) =>
                             value.map((option, index) => {
@@ -179,13 +221,14 @@ function RelationInput({ source, reference, displayField, multiple, label, helpe
         return (
             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 0.5 }}>
                 <Box sx={{ flex: 1 }}>
-                    <ReferenceInput source={source} reference={reference}>
+                    <ReferenceInput source={source} reference={reference} filter={filter}>
                         <AutocompleteInput
                             label={label}
                             optionText={displayField}
                             helperText={helperText}
                             filterToQuery={filterToQuery}
                             matchSuggestion={matchSuggestion}
+                            {...(createElement ? { create: createElement } : {})}
                         />
                     </ReferenceInput>
                 </Box>
@@ -199,13 +242,14 @@ function RelationInput({ source, reference, displayField, multiple, label, helpe
     }
 
     return (
-        <ReferenceInput source={source} reference={reference}>
+        <ReferenceInput source={source} reference={reference} filter={filter}>
             <AutocompleteInput
                 label={label}
                 optionText={displayField}
                 helperText={helperText}
                 filterToQuery={filterToQuery}
                 matchSuggestion={matchSuggestion}
+                {...(createElement ? { create: createElement } : {})}
             />
         </ReferenceInput>
     );
@@ -304,7 +348,17 @@ export function InputGuesser({ source, resource: resourceProp }: InputGuesserPro
                 />,
             );
         }
-        case 'entity_taxonomy':
+        case 'entity_taxonomy': {
+            // Inline taxonomy creation requires a single taxonomy bucket — read
+            // it from the `type=...` token in the field's PHP filter string
+            // (e.g. `type=genres`). Whenever the type is known we wire
+            // `<CreateTaxonomyOption>` into the autocomplete; the editor can
+            // disable this by clearing the filter on the PHP attribute.
+            const parsedFilter = parseFieldFilter(meta.filter);
+            const taxonomyType =
+                parsedFilter && typeof parsedFilter.type === 'string'
+                    ? parsedFilter.type
+                    : undefined;
             return wrapWithReference(
                 <RelationInput
                     source={source}
@@ -313,6 +367,25 @@ export function InputGuesser({ source, resource: resourceProp }: InputGuesserPro
                     multiple={meta.multiple}
                     label={label}
                     helperText={meta.info}
+                    filter={parsedFilter}
+                    taxonomyType={taxonomyType}
+                />,
+            );
+        }
+        case 'taxonomy':
+            // Single string slug bound to a Taxonomy (TaxonomyField PHP attribute).
+            // Renders an autocomplete (pill on selection) filtered by the taxonomy
+            // type so only the right taxa are listed. Inline-create is wired
+            // automatically since the type is always known here.
+            return wrapWithReference(
+                <RelationInput
+                    source={source}
+                    reference="taxonomies"
+                    displayField="name"
+                    label={label}
+                    helperText={meta.info}
+                    filter={meta.taxonomy ? { type: meta.taxonomy } : undefined}
+                    taxonomyType={meta.taxonomy}
                 />,
             );
         case 'collection':
