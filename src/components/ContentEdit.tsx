@@ -32,20 +32,36 @@ const STRIP_KEYS = new Set([
  * - Strips read-only and Hydra metadata fields
  * - Converts nested objects with @id back to IRI strings
  */
+/**
+ * Collapse a JSON-LD reference (object with `@id`) to its IRI string —
+ * unless the object carries field metadata that isn't part of the relation
+ * itself (typically `formats` for an ImageField crop override). Stripping
+ * `formats` here meant the cropper UI saved nothing visible: the form
+ * value `{ '@id': iri, formats: {...} }` was collapsed to `iri`, the PATCH
+ * payload looked unchanged from the server's record, and react-admin's
+ * submit ended up no-op.
+ */
+function collapseReference(value: unknown): unknown {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return value;
+  if (!('@id' in value)) return value;
+  const iri = (value as { '@id': string })['@id'];
+  const formats = (value as { formats?: unknown }).formats;
+  if (formats && typeof formats === 'object') {
+    return { '@id': iri, formats };
+  }
+  return iri;
+}
+
 function normalizeForPatch(data: Record<string, unknown>): Record<string, unknown> {
   const normalized: Record<string, unknown> = {};
 
   for (const [key, value] of Object.entries(data)) {
     if (STRIP_KEYS.has(key)) continue;
 
-    if (value && typeof value === 'object' && !Array.isArray(value) && '@id' in value) {
-      normalized[key] = (value as { '@id': string })['@id'];
-    } else if (Array.isArray(value)) {
-      normalized[key] = value.map((item) =>
-        item && typeof item === 'object' && '@id' in item ? item['@id'] : item,
-      );
+    if (Array.isArray(value)) {
+      normalized[key] = value.map((item) => collapseReference(item));
     } else {
-      normalized[key] = value;
+      normalized[key] = collapseReference(value);
     }
   }
 
