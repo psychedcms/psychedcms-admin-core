@@ -52,48 +52,66 @@ export function ContentCreate() {
         async (data: any) => {
             runAfterSaveHooks(data as Record<string, unknown>, resource ?? '');
 
-            if (associateState && entrypoint) {
-                const { parentIri, source, parentResource, parentId } = associateState;
-                const newIri = data['@id'] as string;
-
-                try {
-                    // Fetch current parent to get existing IRIs
-                    const parentUrl = `${entrypoint}/${parentResource}/${parentId}`;
-                    const parentResp = await fetch(parentUrl, {
-                        headers: {
-                            Accept: 'application/ld+json',
-                            Authorization: `Bearer ${localStorage.getItem('token') ?? ''}`,
-                        },
-                    });
-
-                    if (parentResp.ok) {
-                        const parentData = await parentResp.json();
-                        const currentItems = parentData[source] || [];
-                        const currentIris: string[] = currentItems.map((item: unknown) => {
-                            if (typeof item === 'string') return item;
-                            if (item && typeof item === 'object' && '@id' in (item as Record<string, unknown>)) {
-                                return (item as Record<string, unknown>)['@id'] as string;
-                            }
-                            return '';
-                        }).filter(Boolean);
-
-                        // PATCH parent with the new IRI added
-                        await fetch(parentUrl, {
-                            method: 'PATCH',
-                            headers: {
-                                Accept: 'application/ld+json',
-                                'Content-Type': 'application/merge-patch+json',
-                                Authorization: `Bearer ${localStorage.getItem('token') ?? ''}`,
-                            },
-                            body: JSON.stringify({ [source]: [...currentIris, newIri] }),
-                        });
-                    }
-                } catch {
-                    notify('ra.notification.http_error', { type: 'error' });
-                }
-
-                navigate(`/${parentResource}/${parentId}`);
+            // Standalone create: a custom `onSuccess` overrides react-admin's
+            // default success notification + redirect, so restore them — without
+            // this the editor gets no confirmation and wonders if the save worked.
+            if (!associateState || !entrypoint) {
+                notify('ra.notification.created', {
+                    type: 'info',
+                    messageArgs: { smart_count: 1 },
+                });
+                navigate(`/${resource}/${encodeURIComponent(String(data.id ?? ''))}`);
+                return;
             }
+
+            const { source, parentResource, parentId } = associateState;
+            const newIri = data['@id'] as string;
+
+            try {
+                // Fetch current parent to get existing IRIs, then PATCH the new one in.
+                const parentUrl = `${entrypoint}/${parentResource}/${parentId}`;
+                const parentResp = await fetch(parentUrl, {
+                    headers: {
+                        Accept: 'application/ld+json',
+                        Authorization: `Bearer ${localStorage.getItem('token') ?? ''}`,
+                    },
+                });
+                if (!parentResp.ok) throw new Error(`parent fetch failed: ${parentResp.status}`);
+
+                const parentData = await parentResp.json();
+                const currentItems = parentData[source] || [];
+                const currentIris: string[] = currentItems
+                    .map((item: unknown) => {
+                        if (typeof item === 'string') return item;
+                        if (item && typeof item === 'object' && '@id' in (item as Record<string, unknown>)) {
+                            return (item as Record<string, unknown>)['@id'] as string;
+                        }
+                        return '';
+                    })
+                    .filter(Boolean);
+
+                const patchResp = await fetch(parentUrl, {
+                    method: 'PATCH',
+                    headers: {
+                        Accept: 'application/ld+json',
+                        'Content-Type': 'application/merge-patch+json',
+                        Authorization: `Bearer ${localStorage.getItem('token') ?? ''}`,
+                    },
+                    body: JSON.stringify({ [source]: [...currentIris, newIri] }),
+                });
+                if (!patchResp.ok) throw new Error(`parent patch failed: ${patchResp.status}`);
+
+                notify('ra.notification.created', { type: 'info', messageArgs: { smart_count: 1 } });
+            } catch {
+                // The entity itself WAS created (the create POST already returned
+                // 2xx) — only linking it to the parent failed. Surface a
+                // non-blocking warning rather than a generic error that implies
+                // the whole save failed; otherwise the editor re-submits and hits
+                // a duplicate-slug 500.
+                notify('psyched.content.created_not_associated', { type: 'warning' });
+            }
+
+            navigate(`/${parentResource}/${parentId}`);
         },
         [resource, associateState, entrypoint, navigate, notify],
     );

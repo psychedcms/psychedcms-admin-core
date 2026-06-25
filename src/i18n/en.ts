@@ -9,6 +9,10 @@ export const enMessages = {
             media: 'Media',
             global_settings: 'Settings',
         },
+        content: {
+            created_not_associated:
+                'Item created, but linking it to the parent failed — you can associate it manually.',
+        },
         user_menu: {
             profile: 'Profile',
         },

@@ -9,6 +9,10 @@ export const frMessages = {
             media: 'Médias',
             global_settings: 'Paramètres',
         },
+        content: {
+            created_not_associated:
+                'Élément créé, mais son association au parent a échoué — vous pouvez l’associer manuellement.',
+        },
         user_menu: {
             profile: 'Profil',
         },
